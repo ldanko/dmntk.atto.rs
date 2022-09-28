@@ -64,9 +64,25 @@ fn finalize() {
 }
 
 /// Loads the input file.
-fn load_from_file(file_name: &str) -> Plane {
-  let content = fs::read_to_string(file_name).unwrap_or_else(|_| panic!("Loading input file failed: {}", file_name));
-  Plane::new(&content)
+fn load_from_file(file_name: &str) -> Option<Plane> {
+  if let Ok(content) = fs::read_to_string(file_name) {
+    Some(Plane::new(&content))
+  } else {
+    eprintln!("Loading file failed: {}", file_name);
+    None
+  }
+}
+
+fn repaint_plane(plane: &Plane) {
+  let mut r = 0;
+  for row in &plane.rows {
+    mv(r, 0);
+    addstr(&row.to_string());
+    addstr(&" ");
+    r += 1;
+  }
+  mv(plane.cur_screen_y(), plane.cur_screen_x());
+  refresh();
 }
 
 /// Processes input keystrokes.
@@ -106,13 +122,29 @@ fn process_keystrokes(plane: &mut Plane) {
           mv(plane.cur_screen_y(), plane.cur_screen_x());
         }
       }
-      _ => {
-        getyx(stdscr(), &mut cur_y, &mut cur_x);
-        mvaddstr(40, 1, &format!("{:X}", ch));
-        mvaddstr(41, 1, &format!("{:40}", key_name));
-        mv(cur_y, cur_x);
-        refresh();
+      KEY_NAME_BACKSPACE => {
+        plane.delete_character(true);
+        repaint_plane(plane);
       }
+      KEY_NAME_DEL => {
+        plane.delete_character(false);
+        repaint_plane(plane);
+      }
+      _ => match ch {
+        32..=127 => {
+          if let Some(new_ch) = char::from_u32(ch as u32) {
+            plane.insert_character(new_ch);
+            repaint_plane(plane);
+          }
+        }
+        _ => {
+          getyx(stdscr(), &mut cur_y, &mut cur_x);
+          mvaddstr(40, 1, &format!("{:X}", ch));
+          mvaddstr(41, 1, &format!("{:40}", key_name));
+          mv(cur_y, cur_x);
+          refresh();
+        }
+      },
     }
   }
 }
@@ -130,7 +162,8 @@ fn main() {
     return;
   }
   initialize();
-  let mut plane = load_from_file(&args[1]);
-  process_keystrokes(&mut plane);
+  if let Some(mut plane) = load_from_file(&args[1]) {
+    process_keystrokes(&mut plane);
+  }
   finalize();
 }

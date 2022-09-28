@@ -46,3 +46,9 @@ pub const KEY_NAME_RIGHT: &str = "KEY_RIGHT";
 
 /// Up arrow.
 pub const KEY_NAME_UP: &str = "KEY_UP";
+
+/// Backspace.
+pub const KEY_NAME_BACKSPACE: &str = "KEY_BACKSPACE";
+
+/// Del.
+pub const KEY_NAME_DEL: &str = "KEY_DC";

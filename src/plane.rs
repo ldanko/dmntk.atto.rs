@@ -93,11 +93,11 @@ impl Plane {
   }
   /// Moves cursor up.
   pub fn move_up(&mut self) -> bool {
-    if self.is_allowed(self.pos_y - 1, self.pos_x) {
+    if self.is_allowed(-1, 0) {
       self.pos_y -= 1;
       return true;
     }
-    if self.is_horz_line(self.pos_y - 1, self.pos_x) && self.is_allowed(self.pos_y - 2, self.pos_x) {
+    if self.is_horz_line(-1, 0) && self.is_allowed(-2, 0) {
       self.pos_y -= 2;
       return true;
     }
@@ -105,11 +105,11 @@ impl Plane {
   }
   /// Moves cursor down.
   pub fn move_down(&mut self) -> bool {
-    if self.is_allowed(self.pos_y + 1, self.pos_x) {
+    if self.is_allowed(1, 0) {
       self.pos_y += 1;
       return true;
     }
-    if self.is_horz_line(self.pos_y + 1, self.pos_x) && self.is_allowed(self.pos_y + 2, self.pos_x) {
+    if self.is_horz_line(1, 0) && self.is_allowed(2, 0) {
       self.pos_y += 2;
       return true;
     }
@@ -117,11 +117,11 @@ impl Plane {
   }
   /// Moves cursor left.
   pub fn move_left(&mut self) -> bool {
-    if self.is_allowed(self.pos_y, self.pos_x - 1) {
+    if self.is_allowed(0, -1) {
       self.pos_x -= 1;
       return true;
     }
-    if self.is_vert_line(self.pos_y, self.pos_x - 1) && self.is_allowed(self.pos_y, self.pos_x - 2) {
+    if self.is_vert_line(0, -1) && self.is_allowed(0, -2) {
       self.pos_x -= 2;
       return true;
     }
@@ -129,39 +129,139 @@ impl Plane {
   }
   /// Moves cursor right.
   pub fn move_right(&mut self) -> bool {
-    if self.is_allowed(self.pos_y, self.pos_x + 1) {
+    if self.is_allowed(0, 1) {
       self.pos_x += 1;
       return true;
     }
-    if self.is_vert_line(self.pos_y, self.pos_x + 1) && self.is_allowed(self.pos_y, self.pos_x + 2) {
+    if self.is_vert_line(0, 1) && self.is_allowed(0, 2) {
       self.pos_x += 2;
       return true;
     }
     false
   }
+  /// Inserts a character after current position.
+  pub fn insert_character(&mut self, ch: char) {
+    self.rows[self.pos_y].columns.insert(self.pos_x, ch);
+    self.pos_x += 1;
+    for (row_index, row) in self.rows.iter_mut().enumerate() {
+      if row_index != self.pos_y && self.pos_x < row.columns.len() - 1 {
+        let mut found_char = ' ';
+        let mut found_index = 0;
+        for (col_index, ch) in row.columns[self.pos_x..].iter().enumerate() {
+          if matches!(
+            ch,
+            '│' | '┼' | '┬' | '┴' | '╪' | '┐' | '┘' | '├' | '║' | '╟' | '╬' | '╥' | '╨' | '╫' | '╢' | '┤' | '╡'
+          ) {
+            found_char = *ch;
+            found_index = self.pos_x + col_index;
+            break;
+          }
+        }
+        match found_char {
+          '│' | '├' | '║' | '╟' => row.columns.insert(found_index, ' '),
+          '┼' | '┬' | '┴' | '┐' | '┘' | '┤' | '╥' | '╨' | '╫' | '╢' => row.columns.insert(found_index, '─'),
+          '╪' | '╬' | '╡' => row.columns.insert(found_index, '═'),
+          _ => {}
+        }
+      }
+    }
+  }
+  /// Deletes a character.
+  pub fn delete_character(&mut self, before: bool) {
+    let mut deleted = false;
+    if before {
+      if !self.is_vert_line(0, -1) {
+        self.rows[self.pos_y].columns.remove(self.pos_x - 1);
+        self.pos_x -= 1;
+        deleted = true;
+      }
+    } else {
+      self.rows[self.pos_y].columns.remove(self.pos_x);
+      deleted = true;
+    }
+    if deleted {
+      // check if the character deletion in other rows is possible
+      let mut can_delete = true;
+      for (row_index, row) in self.rows.iter_mut().enumerate() {
+        if row_index != self.pos_y && self.pos_x < row.columns.len() - 1 {
+          for (col_index, ch) in row.columns[self.pos_x..].iter().enumerate() {
+            if matches!(ch, '│' | '├' | '║' | '╟') {
+              if row.columns[self.pos_x + col_index - 1] != ' ' {
+                can_delete = false;
+              }
+              break;
+            }
+          }
+        }
+      }
+      if can_delete {
+        for (row_index, row) in self.rows.iter_mut().enumerate() {
+          if row_index != self.pos_y && self.pos_x < row.columns.len() - 1 {
+            let mut found_index = 0;
+            for (col_index, ch) in row.columns[self.pos_x..].iter().enumerate() {
+              if matches!(
+                ch,
+                '│' | '┼' | '┬' | '┴' | '╪' | '┐' | '┘' | '├' | '║' | '╟' | '╬' | '╥' | '╨' | '╫' | '╢' | '┤' | '╡'
+              ) {
+                found_index = self.pos_x + col_index;
+                break;
+              }
+            }
+            if found_index > 0 {
+              row.columns.remove(found_index - 1);
+            }
+          }
+        }
+      } else {
+        self.rows[self.pos_y].columns.insert(self.pos_x + 1, ' ');
+      }
+    }
+  }
   /// Returns `true` when the character at the specified position is a horizontal line.
-  fn is_horz_line(&self, r: usize, c: usize) -> bool {
-    if r > 0 && r < self.rows.len() - 1 && c > 0 && c < self.rows[r].columns.len() - 1 {
+  fn is_horz_line(&self, row_offset: i32, col_offset: i32) -> bool {
+    let (r, c) = self.apply_offset(row_offset, col_offset);
+    if r < self.rows.len() && c < self.rows[r].columns.len() {
       matches!(self.rows[r].columns[c], '─' | '═')
     } else {
       false
     }
   }
   /// Returns `true` when the character at the specified position is a vertical line.
-  fn is_vert_line(&self, r: usize, c: usize) -> bool {
-    if r > 0 && r < self.rows.len() - 1 && c > 0 && c < self.rows[r].columns.len() - 1 {
+  fn is_vert_line(&self, row_offset: i32, col_offset: i32) -> bool {
+    let (r, c) = self.apply_offset(row_offset, col_offset);
+    if r < self.rows.len() && c < self.rows[r].columns.len() {
       matches!(self.rows[r].columns[c], '│' | '║')
     } else {
       false
     }
   }
-  /// Returns `true` when the character at the specified position is not a box-drawing character.
-  #[rustfmt::skip]
-  fn is_allowed(&self, r: usize, c: usize) -> bool {
+  /// Returns `true` when the cursor position is allowed according to horizontal and vertical offset.
+  fn is_allowed(&self, row_offset: i32, col_offset: i32) -> bool {
+    let (r, c) = self.apply_offset(row_offset, col_offset);
     if r > 0 && r < self.rows.len() - 1 && c > 0 && c < self.rows[r].columns.len() - 1 {
-      !matches!(self.rows[r].columns[c], '┌' | '┐' | '└' | '┘' | '─' | '│'| '├' | '┤' | '┴' | '┬' | '┼' | '╪' | '╬' | '╞' | '╡' | '╥' | '╨' | '═' | '║' | '╟' | '╢')
+      self.is_box_drawing_char(self.rows[r].columns[c])
     } else {
       false
     }
+  }
+  /// Calculates new position according the specified offset.
+  fn apply_offset(&self, row_offset: i32, col_offset: i32) -> (usize, usize) {
+    (
+      if row_offset >= 0 {
+        self.pos_y.saturating_add(row_offset.unsigned_abs() as usize)
+      } else {
+        self.pos_y.saturating_sub(row_offset.unsigned_abs() as usize)
+      },
+      if col_offset >= 0 {
+        self.pos_x.saturating_add(col_offset.unsigned_abs() as usize)
+      } else {
+        self.pos_x.saturating_sub(col_offset.unsigned_abs() as usize)
+      },
+    )
+  }
+  /// Returns `true` when the character is not a box-drawing character.
+  #[rustfmt::skip]
+  fn is_box_drawing_char(&self, ch: char) -> bool {
+    !matches!(ch, '┌' | '┐' | '└' | '┘' | '─' | '│' | '├' | '┤' | '┴' | '┬' | '┼' | '╪' | '╫' | '╬' | '╞' | '╡' | '╥' | '╨' | '═' | '║' | '╟' | '╢')
   }
 }
