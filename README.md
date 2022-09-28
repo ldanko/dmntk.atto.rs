@@ -2,6 +2,12 @@
 
 # dmntk-atto
 
+## Dependencies
+
+```shell
+$ sudo yum install ncurses ncurses-devel
+```
+
 ## License
 
 Licensed under either of

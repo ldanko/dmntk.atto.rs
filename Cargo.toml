@@ -1,8 +1,13 @@
 [package]
 name = "dmntk-atto"
-version = "0.1.0"
+version = "0.0.1"
+authors = ["Dariusz Depta <dariusz.depta@dmntk.io>"]
+description = "DMNTK | atto"
+documentation = "https://docs.rs/dmntk-atto"
+repository = "https://github.com/dmntk/dmntk.atto.git"
+license = "MIT OR Apache-2.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ncurses = { version = "5.101.0", features = ["wide", "extended_colors"] }
