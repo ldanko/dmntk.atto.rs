@@ -1,6 +1,6 @@
 **DMNTK** | Decision Model and Notation Toolkit
 
-# dmntk-atto
+# Decision table editor
 
 ## Dependencies
 
