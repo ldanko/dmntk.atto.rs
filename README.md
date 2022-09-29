@@ -2,6 +2,10 @@
 
 # Decision table editor
 
+## Overview
+
+**atto** is a terminal based editor for decision tables.
+
 ## Dependencies
 
 ```shell
