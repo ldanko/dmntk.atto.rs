@@ -140,10 +140,12 @@ impl Plane {
       offset_horz: 0,
     }
   }
+
   /// Returns a character *under* current cursor position.
   pub fn cur_char(&self) -> char {
     self.rows[self.pos_row].columns[self.pos_col]
   }
+
   /// Sets a new position of the cursor.
   pub fn move_cursor(&mut self, row_offset: i32, col_offset: i32) {
     if self.is_allowed(row_offset, col_offset) {
@@ -154,18 +156,22 @@ impl Plane {
       }
     }
   }
+
   /// Returns the vertical position of the cursor in screen coordinates.
   pub fn cur_screen_row(&self) -> i32 {
     self.pos_row as i32 + self.offset_vert as i32
   }
+
   /// Returns the horizontal position of the cursor in screen coordinates.
   pub fn cur_screen_col(&self) -> i32 {
     self.pos_col as i32 + self.offset_horz as i32
   }
-  ///
+
+  /// Returns `true` when the current cursor coordinates are valid (somewhere inside decision table cell).
   pub fn is_valid_cursor_pos(&self) -> bool {
     (1..self.rows.len() - 1).contains(&self.pos_row) && (1..self.rows[self.pos_row].columns.len() - 1).contains(&self.pos_col)
   }
+
   /// Moves cursor up.
   pub fn move_up(&mut self) -> bool {
     if self.is_allowed(-1, 0) {
@@ -178,6 +184,7 @@ impl Plane {
     }
     false
   }
+
   /// Moves cursor down.
   pub fn move_down(&mut self) -> bool {
     if self.is_allowed(1, 0) {
@@ -190,6 +197,7 @@ impl Plane {
     }
     false
   }
+
   /// Moves cursor left.
   pub fn move_left(&mut self) -> bool {
     if self.is_allowed(0, -1) {
@@ -202,6 +210,7 @@ impl Plane {
     }
     false
   }
+
   /// Moves cursor right.
   pub fn move_right(&mut self) -> bool {
     if self.is_allowed(0, 1) {
@@ -214,6 +223,7 @@ impl Plane {
     }
     false
   }
+
   /// Places cursor at the first character in the cell (same row).
   pub fn move_cell_start(&mut self) -> bool {
     if self.is_valid_cursor_pos() {
@@ -224,6 +234,7 @@ impl Plane {
     }
     false
   }
+
   /// Places cursor at the last character in the cell (same row).
   pub fn move_cell_end(&mut self) -> bool {
     if self.is_valid_cursor_pos() {
@@ -234,6 +245,7 @@ impl Plane {
     }
     false
   }
+
   /// Places cursor at the first character in the decision table (same row).
   pub fn move_table_start(&mut self) -> bool {
     if (1..self.rows.len() - 1).contains(&self.pos_row) {
@@ -246,6 +258,7 @@ impl Plane {
     }
     false
   }
+
   /// Places cursor at the last character in the cell (same row).
   pub fn move_table_end(&mut self) -> bool {
     if (1..self.rows.len() - 1).contains(&self.pos_row) {
@@ -259,6 +272,7 @@ impl Plane {
     }
     false
   }
+
   /// Places cursor at the first character in the next cell (same row).
   pub fn move_cell_next(&mut self) -> bool {
     if self.is_valid_cursor_pos() {
@@ -273,6 +287,7 @@ impl Plane {
     }
     false
   }
+
   /// Places cursor at the last character in the previous cell (same row).
   pub fn move_cell_prev(&mut self) -> bool {
     if self.is_valid_cursor_pos() {
@@ -287,6 +302,7 @@ impl Plane {
     }
     false
   }
+
   /// Inserts a character at the current position.
   pub fn insert_character(&mut self, ch: char) {
     self.rows[self.pos_row].columns.insert(self.pos_col, ch);
@@ -314,6 +330,7 @@ impl Plane {
       }
     }
   }
+
   /// Deletes a character placed *before* the cursor.
   pub fn delete_character_before(&mut self) {
     if !self.is_vert_line(0, -1) {
@@ -326,6 +343,7 @@ impl Plane {
       }
     }
   }
+
   /// Deletes a character placed *under* the cursor.
   pub fn delete_character(&mut self) {
     self.rows[self.pos_row].columns.remove(self.pos_col);
@@ -338,6 +356,7 @@ impl Plane {
       self.move_cursor(0, -1);
     }
   }
+
   /// Inserts whitespace character before the next vertical line to the right from the cursor.
   fn insert_whitespace_before_vert_line(&mut self) {
     if (1..self.rows.len()).contains(&self.pos_row) {
@@ -352,6 +371,7 @@ impl Plane {
       }
     }
   }
+
   /// Returns `true` when character deletion before the next vertical line to the right from the cursor is possible.
   fn can_vert_delete(&self) -> bool {
     for (row_index, row) in self.rows.iter().enumerate() {
@@ -371,6 +391,7 @@ impl Plane {
     }
     true
   }
+
   /// Deletes a single character before the next vertical line
   fn vert_delete(&mut self) {
     for (row_index, row) in self.rows.iter_mut().enumerate() {
@@ -388,6 +409,7 @@ impl Plane {
       }
     }
   }
+
   /// Returns `true` when the character at the specified position is a horizontal line.
   fn is_horz_line(&self, row_offset: i32, col_offset: i32) -> bool {
     let (r, c) = self.adjusted_position(row_offset, col_offset);
@@ -397,6 +419,7 @@ impl Plane {
       false
     }
   }
+
   /// Returns `true` when the character at the specified position is a vertical line.
   fn is_vert_line(&self, row_offset: i32, col_offset: i32) -> bool {
     let (r, c) = self.adjusted_position(row_offset, col_offset);
@@ -406,6 +429,7 @@ impl Plane {
       false
     }
   }
+
   /// Returns `true` when the cursor position is allowed according to horizontal and vertical offset.
   fn is_allowed(&self, row_offset: i32, col_offset: i32) -> bool {
     let (r, c) = self.adjusted_position(row_offset, col_offset);
@@ -415,6 +439,7 @@ impl Plane {
       false
     }
   }
+
   /// Calculates new position adjusted with the specified row and column offset.
   fn adjusted_position(&self, row_offset: i32, col_offset: i32) -> (usize, usize) {
     (
@@ -430,6 +455,7 @@ impl Plane {
       },
     )
   }
+
   /// Returns the offset of the vertical line to the right from current cursor position.
   fn get_vertical_line_offset_right(&self) -> Option<i32> {
     if self.is_valid_cursor_pos() {
@@ -443,6 +469,7 @@ impl Plane {
     }
     None
   }
+
   /// Returns the offset of the vertical line to the left from current cursor position.
   fn get_vertical_line_offset_left(&self) -> Option<i32> {
     if self.is_valid_cursor_pos() {
