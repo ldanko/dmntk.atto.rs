@@ -123,11 +123,11 @@ fn process_keystrokes(plane: &mut Plane) {
         }
       }
       KEY_NAME_BACKSPACE => {
-        plane.delete_character(true);
+        plane.delete_character_before();
         repaint_plane(plane);
       }
       KEY_NAME_DEL => {
-        plane.delete_character(false);
+        plane.delete_character();
         repaint_plane(plane);
       }
       _ => match ch {

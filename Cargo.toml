@@ -11,3 +11,6 @@ edition = "2021"
 
 [dependencies]
 ncurses = { version = "5.101.0", features = ["wide", "extended_colors"] }
+
+[dev-dependencies]
+difference = "2.0.0"

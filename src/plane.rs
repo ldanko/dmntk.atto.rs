@@ -213,24 +213,38 @@ impl Plane {
       }
     }
   }
-  /// Deletes a character.
-  pub fn delete_character(&mut self, before: bool) {
-    let mut deleted = false;
-    if before {
-      if !self.is_vert_line(0, -1) {
-        self.rows[self.pos_y].columns.remove(self.pos_x - 1);
-        self.pos_x -= 1;
-        deleted = true;
-      }
-    } else {
-      self.rows[self.pos_y].columns.remove(self.pos_x);
-      deleted = true;
-    }
-    if deleted {
+  /// Deletes a character placed *before* the cursor.
+  pub fn delete_character_before(&mut self) {
+    if !self.is_vert_line(0, -1) {
+      self.rows[self.pos_y].columns.remove(self.pos_x - 1);
+      self.move_cursor(0, -1);
       if self.can_vert_delete() {
         self.vert_delete();
       } else {
-        self.rows[self.pos_y].columns.insert(self.pos_x + 1, ' ');
+        self.insert_ws_before_vert_line();
+      }
+    }
+  }
+  /// Deletes a character placed *under* the cursor.
+  pub fn delete_character(&mut self) {
+    self.rows[self.pos_y].columns.remove(self.pos_x);
+    if self.can_vert_delete() {
+      self.vert_delete();
+    } else {
+      self.insert_ws_before_vert_line();
+    }
+  }
+  ///
+  fn insert_ws_before_vert_line(&mut self) {
+    if (1..self.rows.len()).contains(&self.pos_y) {
+      let row = &mut self.rows[self.pos_y];
+      if (1..row.columns.len() - 1).contains(&self.pos_x) {
+        for (col_index, ch) in row.columns[self.pos_x..].iter().enumerate() {
+          if is_vert_line_left!(ch) {
+            row.columns.insert(self.pos_x + col_index, CH_WS);
+            break;
+          }
+        }
       }
     }
   }
