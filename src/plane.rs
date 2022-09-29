@@ -37,8 +37,8 @@ use std::fmt::Display;
 
 const CH_WS: char = ' ';
 
-///
-macro_rules! is_box_drawing_char {
+/// Checks if the specified character is a box-drawing character.
+macro_rules! is_box_drawing_character {
   ($ch:expr) => {
     match $ch {
       '┌' | '┐' | '└' | '┘' | '─' | '│' | '├' | '┤' | '┴' | '┬' | '┼' | '╪' | '╫' | '╬' | '╞' | '╡' | '╥' | '╨' | '═' | '║' | '╟' | '╢' => true,
@@ -47,8 +47,8 @@ macro_rules! is_box_drawing_char {
   };
 }
 
-///
-macro_rules! is_vert_line_left {
+/// Checks if the specified character is a vertical line seen from the left side.
+macro_rules! is_vertical_line_left {
   ($ch:expr) => {
     match $ch {
       '│' | '├' | '║' | '╟' => true,
@@ -57,7 +57,17 @@ macro_rules! is_vert_line_left {
   };
 }
 
-/// Row of characters.
+/// Checks if the specified character is a crossing with vertical line.
+macro_rules! is_vertical_line_crossing {
+  ($ch:expr) => {
+    match $ch {
+      '│' | '┼' | '┬' | '┴' | '╪' | '┐' | '┘' | '├' | '║' | '╟' | '╬' | '╥' | '╨' | '╫' | '╢' | '┤' | '╡' => true,
+      _ => false,
+    }
+  };
+}
+
+/// Row of characters in columns.
 pub struct Row {
   /// Characters in a row.
   pub columns: Vec<char>,
@@ -81,14 +91,14 @@ impl Row {
 pub struct Plane {
   /// Rows in plane.
   pub rows: Vec<Row>,
-  /// Current horizontal cursor position.
-  pub pos_x: usize,
-  /// Current vertical cursor position.
-  pub pos_y: usize,
-  /// Horizontal offset of the plane against top-left corner of the screen.
-  pub offset_x: isize,
+  /// Current vertical cursor position (row index).
+  pub pos_row: usize,
+  /// Current horizontal cursor position (column index).
+  pub pos_col: usize,
   /// Vertical offset of the plane against top-left corner of the screen.
-  pub offset_y: isize,
+  pub offset_vert: isize,
+  /// Horizontal offset of the plane against top-left corner of the screen.
+  pub offset_horz: isize,
 }
 
 impl Display for Plane {
@@ -114,38 +124,42 @@ impl Plane {
     }
     Self {
       rows,
-      pos_x: 1,
-      pos_y: 1,
-      offset_x: 0,
-      offset_y: 0,
+      pos_row: 1,
+      pos_col: 1,
+      offset_vert: 0,
+      offset_horz: 0,
     }
   }
+  /// Returns a character *under* current cursor position.
+  pub fn cur_char(&self) -> char {
+    self.rows[self.pos_row].columns[self.pos_col]
+  }
   /// Sets a new position of the cursor.
-  pub fn move_cursor(&mut self, row_offset: i32, col_offset: i32) {
+  pub fn mov(&mut self, row_offset: i32, col_offset: i32) {
     if self.is_allowed(row_offset, col_offset) {
       let (row, col) = self.adjusted_position(row_offset, col_offset);
       if (1..self.rows.len() - 1).contains(&row) && (1..self.rows[row].columns.len() - 1).contains(&col) {
-        self.pos_y = row;
-        self.pos_x = col;
+        self.pos_row = row;
+        self.pos_col = col;
       }
     }
   }
-  /// Returns the horizontal position of the cursor in screen coordinates.
-  pub fn cur_screen_x(&self) -> i32 {
-    self.pos_x as i32 + self.offset_x as i32
-  }
   /// Returns the vertical position of the cursor in screen coordinates.
-  pub fn cur_screen_y(&self) -> i32 {
-    self.pos_y as i32 + self.offset_y as i32
+  pub fn cur_screen_row(&self) -> i32 {
+    self.pos_row as i32 + self.offset_vert as i32
+  }
+  /// Returns the horizontal position of the cursor in screen coordinates.
+  pub fn cur_screen_col(&self) -> i32 {
+    self.pos_col as i32 + self.offset_horz as i32
   }
   /// Moves cursor up.
   pub fn move_up(&mut self) -> bool {
     if self.is_allowed(-1, 0) {
-      self.move_cursor(-1, 0);
+      self.mov(-1, 0);
       return true;
     }
     if self.is_horz_line(-1, 0) && self.is_allowed(-2, 0) {
-      self.move_cursor(-2, 0);
+      self.mov(-2, 0);
       return true;
     }
     false
@@ -153,11 +167,11 @@ impl Plane {
   /// Moves cursor down.
   pub fn move_down(&mut self) -> bool {
     if self.is_allowed(1, 0) {
-      self.pos_y += 1;
+      self.pos_row += 1;
       return true;
     }
     if self.is_horz_line(1, 0) && self.is_allowed(2, 0) {
-      self.pos_y += 2;
+      self.pos_row += 2;
       return true;
     }
     false
@@ -165,11 +179,11 @@ impl Plane {
   /// Moves cursor left.
   pub fn move_left(&mut self) -> bool {
     if self.is_allowed(0, -1) {
-      self.pos_x -= 1;
+      self.pos_col -= 1;
       return true;
     }
     if self.is_vert_line(0, -1) && self.is_allowed(0, -2) {
-      self.pos_x -= 2;
+      self.pos_col -= 2;
       return true;
     }
     false
@@ -177,30 +191,30 @@ impl Plane {
   /// Moves cursor right.
   pub fn move_right(&mut self) -> bool {
     if self.is_allowed(0, 1) {
-      self.pos_x += 1;
+      self.pos_col += 1;
       return true;
     }
     if self.is_vert_line(0, 1) && self.is_allowed(0, 2) {
-      self.pos_x += 2;
+      self.pos_col += 2;
       return true;
     }
     false
   }
   /// Inserts a character after current position.
   pub fn insert_character(&mut self, ch: char) {
-    self.rows[self.pos_y].columns.insert(self.pos_x, ch);
-    self.pos_x += 1;
+    self.rows[self.pos_row].columns.insert(self.pos_col, ch);
+    self.pos_col += 1;
     for (row_index, row) in self.rows.iter_mut().enumerate() {
-      if row_index != self.pos_y && self.pos_x < row.columns.len() - 1 {
+      if row_index != self.pos_row && self.pos_col < row.columns.len() - 1 {
         let mut found_char = ' ';
         let mut found_index = 0;
-        for (col_index, ch) in row.columns[self.pos_x..].iter().enumerate() {
+        for (col_index, ch) in row.columns[self.pos_col..].iter().enumerate() {
           if matches!(
             ch,
             '│' | '┼' | '┬' | '┴' | '╪' | '┐' | '┘' | '├' | '║' | '╟' | '╬' | '╥' | '╨' | '╫' | '╢' | '┤' | '╡'
           ) {
             found_char = *ch;
-            found_index = self.pos_x + col_index;
+            found_index = self.pos_col + col_index;
             break;
           }
         }
@@ -216,32 +230,35 @@ impl Plane {
   /// Deletes a character placed *before* the cursor.
   pub fn delete_character_before(&mut self) {
     if !self.is_vert_line(0, -1) {
-      self.rows[self.pos_y].columns.remove(self.pos_x - 1);
-      self.move_cursor(0, -1);
+      self.rows[self.pos_row].columns.remove(self.pos_col - 1);
+      self.mov(0, -1);
       if self.can_vert_delete() {
         self.vert_delete();
       } else {
-        self.insert_ws_before_vert_line();
+        self.insert_whitespace_before_vert_line();
       }
     }
   }
   /// Deletes a character placed *under* the cursor.
   pub fn delete_character(&mut self) {
-    self.rows[self.pos_y].columns.remove(self.pos_x);
+    self.rows[self.pos_row].columns.remove(self.pos_col);
     if self.can_vert_delete() {
       self.vert_delete();
     } else {
-      self.insert_ws_before_vert_line();
+      self.insert_whitespace_before_vert_line();
+    }
+    if is_box_drawing_character!(self.cur_char()) {
+      self.mov(0, -1);
     }
   }
-  ///
-  fn insert_ws_before_vert_line(&mut self) {
-    if (1..self.rows.len()).contains(&self.pos_y) {
-      let row = &mut self.rows[self.pos_y];
-      if (1..row.columns.len() - 1).contains(&self.pos_x) {
-        for (col_index, ch) in row.columns[self.pos_x..].iter().enumerate() {
-          if is_vert_line_left!(ch) {
-            row.columns.insert(self.pos_x + col_index, CH_WS);
+  /// Inserts whitespace character before the next vertical line to the right from the cursor.
+  fn insert_whitespace_before_vert_line(&mut self) {
+    if (1..self.rows.len()).contains(&self.pos_row) {
+      let row = &mut self.rows[self.pos_row];
+      if (1..row.columns.len() - 1).contains(&self.pos_col) {
+        for (col_index, ch) in row.columns[self.pos_col..].iter().enumerate() {
+          if is_vertical_line_left!(ch) {
+            row.columns.insert(self.pos_col + col_index, CH_WS);
             break;
           }
         }
@@ -254,10 +271,13 @@ impl Plane {
   ///
   fn can_vert_delete(&self) -> bool {
     for (row_index, row) in self.rows.iter().enumerate() {
-      if row_index != self.pos_y && (1..row.columns.len() - 1).contains(&self.pos_x) {
-        for (col_index, ch) in row.columns[self.pos_x..].iter().enumerate() {
-          if is_vert_line_left!(ch) {
-            if row.columns[self.pos_x + col_index - 1] != CH_WS {
+      if row_index != self.pos_row && (1..row.columns.len() - 1).contains(&self.pos_col) {
+        for chars in row.columns[self.pos_col - 1..].windows(3) {
+          if is_vertical_line_left!(chars[2]) {
+            if chars[1] != CH_WS {
+              return false;
+            }
+            if is_box_drawing_character!(chars[0]) {
               return false;
             }
             break;
@@ -267,17 +287,14 @@ impl Plane {
     }
     true
   }
-  ///
+  /// Deletes a single character before the next vertical line
   fn vert_delete(&mut self) {
     for (row_index, row) in self.rows.iter_mut().enumerate() {
-      if row_index != self.pos_y && self.pos_x < row.columns.len() - 1 {
+      if row_index != self.pos_row && self.pos_col < row.columns.len() - 1 {
         let mut found_index = 0;
-        for (col_index, ch) in row.columns[self.pos_x..].iter().enumerate() {
-          if matches!(
-            ch,
-            '│' | '┼' | '┬' | '┴' | '╪' | '┐' | '┘' | '├' | '║' | '╟' | '╬' | '╥' | '╨' | '╫' | '╢' | '┤' | '╡'
-          ) {
-            found_index = self.pos_x + col_index;
+        for (col_index, ch) in row.columns[self.pos_col..].iter().enumerate() {
+          if is_vertical_line_crossing!(ch) {
+            found_index = self.pos_col + col_index;
             break;
           }
         }
@@ -309,7 +326,7 @@ impl Plane {
   fn is_allowed(&self, row_offset: i32, col_offset: i32) -> bool {
     let (r, c) = self.adjusted_position(row_offset, col_offset);
     if r > 0 && r < self.rows.len() - 1 && c > 0 && c < self.rows[r].columns.len() - 1 {
-      !is_box_drawing_char!(self.rows[r].columns[c])
+      !is_box_drawing_character!(self.rows[r].columns[c])
     } else {
       false
     }
@@ -318,14 +335,14 @@ impl Plane {
   fn adjusted_position(&self, row_offset: i32, col_offset: i32) -> (usize, usize) {
     (
       if row_offset >= 0 {
-        self.pos_y.saturating_add(row_offset.unsigned_abs() as usize)
+        self.pos_row.saturating_add(row_offset.unsigned_abs() as usize)
       } else {
-        self.pos_y.saturating_sub(row_offset.unsigned_abs() as usize)
+        self.pos_row.saturating_sub(row_offset.unsigned_abs() as usize)
       },
       if col_offset >= 0 {
-        self.pos_x.saturating_add(col_offset.unsigned_abs() as usize)
+        self.pos_col.saturating_add(col_offset.unsigned_abs() as usize)
       } else {
-        self.pos_x.saturating_sub(col_offset.unsigned_abs() as usize)
+        self.pos_col.saturating_sub(col_offset.unsigned_abs() as usize)
       },
     )
   }

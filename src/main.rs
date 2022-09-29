@@ -81,7 +81,7 @@ fn repaint_plane(plane: &Plane) {
     addstr(&row.to_string());
     addstr(" ");
   }
-  mv(plane.cur_screen_y(), plane.cur_screen_x());
+  mv(plane.cur_screen_row(), plane.cur_screen_col());
   refresh();
 }
 
@@ -94,8 +94,8 @@ fn process_keystrokes(plane: &mut Plane) {
     addstr(&row.to_string());
     cur_y += 1;
   }
-  cur_x = plane.cur_screen_x();
-  cur_y = plane.cur_screen_y();
+  cur_x = plane.cur_screen_col();
+  cur_y = plane.cur_screen_row();
   mv(cur_y, cur_x);
   loop {
     let ch = getch();
@@ -104,22 +104,22 @@ fn process_keystrokes(plane: &mut Plane) {
       KEY_NAME_EXIT => break,
       KEY_NAME_UP => {
         if plane.move_up() {
-          mv(plane.cur_screen_y(), plane.cur_screen_x());
+          mv(plane.cur_screen_row(), plane.cur_screen_col());
         }
       }
       KEY_NAME_DOWN => {
         if plane.move_down() {
-          mv(plane.cur_screen_y(), plane.cur_screen_x());
+          mv(plane.cur_screen_row(), plane.cur_screen_col());
         }
       }
       KEY_NAME_LEFT => {
         if plane.move_left() {
-          mv(plane.cur_screen_y(), plane.cur_screen_x());
+          mv(plane.cur_screen_row(), plane.cur_screen_col());
         }
       }
       KEY_NAME_RIGHT => {
         if plane.move_right() {
-          mv(plane.cur_screen_y(), plane.cur_screen_x());
+          mv(plane.cur_screen_row(), plane.cur_screen_col());
         }
       }
       KEY_NAME_BACKSPACE => {
