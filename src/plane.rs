@@ -309,7 +309,7 @@ impl Plane {
       let (whitespace_count, vert_line_offset) = self.vert_whitespace_count();
       let columns = &mut self.rows[self.pos_row].columns;
       columns.insert(self.pos_col, ch);
-      if whitespace_count > 0 {
+      if whitespace_count > 1 {
         columns.remove(self.pos_col + vert_line_offset);
       } else {
         self.vert_insert();
@@ -319,11 +319,11 @@ impl Plane {
   }
 
   /// Deletes a character placed *before* the cursor.
-  pub fn delete_character_before(&mut self) {
+  pub fn delete_character_before(&mut self, double: bool) {
     if !self.is_vert_line(0, -1) {
       self.rows[self.pos_row].columns.remove(self.pos_col - 1);
       self.move_cursor(0, -1);
-      if self.can_vert_delete() {
+      if self.is_vert_space(double) {
         self.vert_delete();
       } else {
         self.insert_whitespace_before_vert_line();
@@ -332,9 +332,9 @@ impl Plane {
   }
 
   /// Deletes a character placed *under* the cursor.
-  pub fn delete_character(&mut self) {
+  pub fn delete_character(&mut self, double: bool) {
     self.rows[self.pos_row].columns.remove(self.pos_col);
-    if self.can_vert_delete() {
+    if self.is_vert_space(double) {
       self.vert_delete();
     } else {
       self.insert_whitespace_before_vert_line();
@@ -405,14 +405,44 @@ impl Plane {
     }
   }
 
-  /// Returns `true` when character deletion before the next vertical line
-  /// to the right from the cursor is possible.
-  fn can_vert_delete(&self) -> bool {
+  ///
+  fn is_vert_space(&self, double: bool) -> bool {
+    if double {
+      self.is_vert_double_space()
+    } else {
+      self.is_vert_single_space()
+    }
+  }
+
+  /// Returns `true` if single whitespace is placed just before the next
+  /// vertical line to the right from the current cursor position, in all rows.
+  fn is_vert_single_space(&self) -> bool {
     for (row_index, row) in self.rows.iter().enumerate() {
       if row_index != self.pos_row && (1..row.columns.len() - 1).contains(&self.pos_col) {
         for chars in row.columns[self.pos_col - 1..].windows(3) {
           if is_vertical_line_left!(chars[2]) {
             if chars[1] != CH_WS {
+              return false;
+            }
+            if is_box_drawing_character!(chars[0]) {
+              return false;
+            }
+            break;
+          }
+        }
+      }
+    }
+    true
+  }
+
+  /// Returns `true` if double whitespace is placed just before the next
+  /// vertical line to the right from the current cursor position, in all rows.
+  fn is_vert_double_space(&self) -> bool {
+    for (row_index, row) in self.rows.iter().enumerate() {
+      if row_index != self.pos_row && (1..row.columns.len() - 1).contains(&self.pos_col) {
+        for chars in row.columns[self.pos_col - 1..].windows(4) {
+          if is_vertical_line_left!(chars[3]) {
+            if chars[1] != CH_WS || chars[2] != CH_WS {
               return false;
             }
             if is_box_drawing_character!(chars[0]) {

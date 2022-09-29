@@ -39,8 +39,8 @@
 /// BACKSPACE key
 pub const KN_BACKSPACE: &str = "KEY_BACKSPACE";
 
-/// DEL
-pub const KN_DEL: &str = "KEY_DC";
+/// DELETE
+pub const KN_DELETE: &str = "KEY_DC";
 
 /// DOWN arrow
 pub const KN_DOWN: &str = "KEY_DOWN";
@@ -66,6 +66,9 @@ pub const KN_UP: &str = "KEY_UP";
 //--------------------------------------------------------------------------------------------------
 // SHIFT + key
 //--------------------------------------------------------------------------------------------------
+
+/// Shift + DELETE
+pub const KN_SHIFT_DELETE: &str = "KEY_SDC";
 
 /// Shift + END
 pub const KN_SHIFT_END: &str = "KEY_SEND";
