@@ -1,4 +1,4 @@
-# TO-DO list
+## to-do list
 
 - Saving file.
 - Creating swap file.
@@ -24,8 +24,13 @@
 - Reposition rule (up<->down, left<->right).
 - Add input clause.
 - Delete input clause.
+- Reposition input clause.
 - Add output clause.
 - Delete output clause.
+- Reposition output clause.
+- Add annotation clause.
+- Remove annotation clause.
+- Reposition annotation clause.
 - Join cells.
 - Split cells.
 - When information item name present - edit separately from the table.
