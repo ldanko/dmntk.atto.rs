@@ -2,7 +2,7 @@
 name = "dmntk-atto"
 version = "0.0.1"
 authors = ["Dariusz Depta <dariusz.depta@dmntk.io>"]
-description = "DMNTK | atto"
+description = "DMNTK | Decision table editor"
 documentation = "https://docs.rs/dmntk-atto"
 repository = "https://github.com/dmntk/dmntk.atto.git"
 license = "MIT OR Apache-2.0"
