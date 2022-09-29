@@ -1,4 +1,5 @@
 mod action_delete;
+mod action_insert;
 mod action_move;
 mod model_plane;
 mod model_row;

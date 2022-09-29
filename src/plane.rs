@@ -305,29 +305,16 @@ impl Plane {
 
   /// Inserts a character at the current position.
   pub fn insert_character(&mut self, ch: char) {
-    self.rows[self.pos_row].columns.insert(self.pos_col, ch);
-    self.pos_col += 1;
-    for (row_index, row) in self.rows.iter_mut().enumerate() {
-      if row_index != self.pos_row && self.pos_col < row.columns.len() - 1 {
-        let mut found_char = ' ';
-        let mut found_index = 0;
-        for (col_index, ch) in row.columns[self.pos_col..].iter().enumerate() {
-          if matches!(
-            ch,
-            '│' | '┼' | '┬' | '┴' | '╪' | '┐' | '┘' | '├' | '║' | '╟' | '╬' | '╥' | '╨' | '╫' | '╢' | '┤' | '╡'
-          ) {
-            found_char = *ch;
-            found_index = self.pos_col + col_index;
-            break;
-          }
-        }
-        match found_char {
-          '│' | '├' | '║' | '╟' => row.columns.insert(found_index, ' '),
-          '┼' | '┬' | '┴' | '┐' | '┘' | '┤' | '╥' | '╨' | '╫' | '╢' => row.columns.insert(found_index, '─'),
-          '╪' | '╬' | '╡' => row.columns.insert(found_index, '═'),
-          _ => {}
-        }
+    if self.is_valid_cursor_pos() {
+      let (whitespace_count, vert_line_offset) = self.vert_whitespace_count();
+      let columns = &mut self.rows[self.pos_row].columns;
+      columns.insert(self.pos_col, ch);
+      if whitespace_count > 0 {
+        columns.remove(self.pos_col + vert_line_offset);
+      } else {
+        self.vert_insert();
       }
+      self.move_cursor(0, 1);
     }
   }
 
@@ -372,7 +359,54 @@ impl Plane {
     }
   }
 
-  /// Returns `true` when character deletion before the next vertical line to the right from the cursor is possible.
+  /// Counts the number of whitespaces before the next vertical line to the right from current cursor position.
+  /// Returns the number of whitespaces and the offset to the vertical line.
+  fn vert_whitespace_count(&self) -> (usize, usize) {
+    let mut whitespace_count = 0;
+    let mut vert_line_offset = 0;
+    if self.is_valid_cursor_pos() {
+      for ch in &self.rows[self.pos_row].columns[self.pos_col + 1..] {
+        if is_vertical_line_left!(ch) {
+          break;
+        } else if *ch == CH_WS {
+          whitespace_count += 1;
+        } else {
+          whitespace_count = 0;
+        }
+        vert_line_offset += 1;
+      }
+    }
+    (whitespace_count, vert_line_offset)
+  }
+
+  ///
+  fn vert_insert(&mut self) {
+    for (row_index, row) in self.rows.iter_mut().enumerate() {
+      if row_index != self.pos_row && self.pos_col < row.columns.len() - 1 {
+        let mut found_char = ' ';
+        let mut found_index = 0;
+        for (col_index, ch) in row.columns[self.pos_col..].iter().enumerate() {
+          if matches!(
+            ch,
+            '│' | '┼' | '┬' | '┴' | '╪' | '┐' | '┘' | '├' | '║' | '╟' | '╬' | '╥' | '╨' | '╫' | '╢' | '┤' | '╡'
+          ) {
+            found_char = *ch;
+            found_index = self.pos_col + col_index;
+            break;
+          }
+        }
+        match found_char {
+          '│' | '├' | '║' | '╟' => row.columns.insert(found_index, ' '),
+          '┼' | '┬' | '┴' | '┐' | '┘' | '┤' | '╥' | '╨' | '╫' | '╢' => row.columns.insert(found_index, '─'),
+          '╪' | '╬' | '╡' => row.columns.insert(found_index, '═'),
+          _ => {}
+        }
+      }
+    }
+  }
+
+  /// Returns `true` when character deletion before the next vertical line
+  /// to the right from the cursor is possible.
   fn can_vert_delete(&self) -> bool {
     for (row_index, row) in self.rows.iter().enumerate() {
       if row_index != self.pos_row && (1..row.columns.len() - 1).contains(&self.pos_col) {
