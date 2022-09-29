@@ -1,4 +1,5 @@
 mod action_delete;
+mod action_move_cursor;
 mod model_plane;
 mod model_row;
 

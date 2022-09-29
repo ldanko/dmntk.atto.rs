@@ -26,7 +26,7 @@ fn _0001() {
   let plane = &mut Plane::new(EX_001);
   assert_eq!(1, plane.cur_screen_col());
   assert_eq!(1, plane.cur_screen_row());
-  plane.mov(3, 2);
+  plane.move_cursor(3, 2);
   plane.delete_character_before();
   eq(EXPECTED_0001, plane);
 }
@@ -56,7 +56,7 @@ fn _0002() {
   let plane = &mut Plane::new(EX_001);
   assert_eq!(1, plane.cur_screen_col());
   assert_eq!(1, plane.cur_screen_row());
-  plane.mov(3, 13);
+  plane.move_cursor(3, 13);
   plane.delete_character_before();
   eq(EXPECTED_0002, plane);
 }
@@ -86,7 +86,7 @@ fn _0003() {
   let plane = &mut Plane::new(EX_001);
   assert_eq!(1, plane.cur_screen_col());
   assert_eq!(1, plane.cur_screen_row());
-  plane.mov(6, 14);
+  plane.move_cursor(6, 14);
   repeat(3, || {
     plane.delete_character_before();
   });
@@ -118,7 +118,7 @@ fn _0004() {
   let plane = &mut Plane::new(EX_001);
   assert_eq!(1, plane.cur_screen_col());
   assert_eq!(1, plane.cur_screen_row());
-  plane.mov(3, 9);
+  plane.move_cursor(3, 9);
   repeat(4, || {
     plane.delete_character();
   });
@@ -149,7 +149,7 @@ const EXPECTED_0005: &str = r#"
 fn _0005() {
   let plane = &mut Plane::new(EX_001);
   eq_cursor(1, 1, plane);
-  plane.mov(6, 14);
+  plane.move_cursor(6, 14);
   plane.delete_character();
   eq_cursor(7, 14, plane);
   eq(EXPECTED_0005, plane);
@@ -179,7 +179,7 @@ const EXPECTED_0006: &str = r#"
 fn _0006() {
   let plane = &mut Plane::new(EX_002);
   eq_cursor(1, 1, plane);
-  plane.mov(14, 4);
+  plane.move_cursor(14, 4);
   plane.delete_character();
   eq_cursor(15, 5, plane);
   eq(EXPECTED_0006, plane);

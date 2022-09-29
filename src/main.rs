@@ -101,34 +101,64 @@ fn process_keystrokes(plane: &mut Plane) {
     let ch = getch();
     let key_name = keyname(ch).unwrap_or_default();
     match key_name.as_str() {
-      KEY_NAME_EXIT => break,
-      KEY_NAME_UP => {
+      KN_CTRL_Q => break,
+      KN_UP => {
         if plane.move_up() {
           mv(plane.cur_screen_row(), plane.cur_screen_col());
         }
       }
-      KEY_NAME_DOWN => {
+      KN_DOWN => {
         if plane.move_down() {
           mv(plane.cur_screen_row(), plane.cur_screen_col());
         }
       }
-      KEY_NAME_LEFT => {
+      KN_LEFT => {
         if plane.move_left() {
           mv(plane.cur_screen_row(), plane.cur_screen_col());
         }
       }
-      KEY_NAME_RIGHT => {
+      KN_RIGHT => {
         if plane.move_right() {
           mv(plane.cur_screen_row(), plane.cur_screen_col());
         }
       }
-      KEY_NAME_BACKSPACE => {
+      KN_BACKSPACE => {
         plane.delete_character_before();
         repaint_plane(plane);
       }
-      KEY_NAME_DEL => {
+      KN_DEL => {
         plane.delete_character();
         repaint_plane(plane);
+      }
+      KN_HOME => {
+        if plane.move_cell_start() {
+          mv(plane.cur_screen_row(), plane.cur_screen_col());
+        }
+      }
+      KN_END => {
+        if plane.move_cell_end() {
+          mv(plane.cur_screen_row(), plane.cur_screen_col());
+        }
+      }
+      KN_SHIFT_HOME => {
+        if plane.move_table_start() {
+          mv(plane.cur_screen_row(), plane.cur_screen_col());
+        }
+      }
+      KN_SHIFT_END => {
+        if plane.move_table_end() {
+          mv(plane.cur_screen_row(), plane.cur_screen_col());
+        }
+      }
+      KN_TAB => {
+        if plane.move_cell_next() {
+          mv(plane.cur_screen_row(), plane.cur_screen_col());
+        }
+      }
+      KN_SHIFT_TAB => {
+        if plane.move_cell_prev() {
+          mv(plane.cur_screen_row(), plane.cur_screen_col());
+        }
       }
       _ => match ch {
         32..=127 => {
