@@ -36,6 +36,8 @@ extern crate ncurses;
 
 mod keys;
 mod plane;
+#[cfg(test)]
+mod tests;
 
 use keys::*;
 use ncurses::*;
@@ -74,12 +76,10 @@ fn load_from_file(file_name: &str) -> Option<Plane> {
 }
 
 fn repaint_plane(plane: &Plane) {
-  let mut r = 0;
-  for row in &plane.rows {
-    mv(r, 0);
+  for (r, row) in plane.rows.iter().enumerate() {
+    mv(r as i32, 0);
     addstr(&row.to_string());
-    addstr(&" ");
-    r += 1;
+    addstr(" ");
   }
   mv(plane.cur_screen_y(), plane.cur_screen_x());
   refresh();

@@ -32,22 +32,52 @@
 
 //! Implementation of an editing plane.
 
+use std::fmt;
+use std::fmt::Display;
+
+const CH_WS: char = ' ';
+
+///
+macro_rules! is_box_drawing_char {
+  ($ch:expr) => {
+    match $ch {
+      '┌' | '┐' | '└' | '┘' | '─' | '│' | '├' | '┤' | '┴' | '┬' | '┼' | '╪' | '╫' | '╬' | '╞' | '╡' | '╥' | '╨' | '═' | '║' | '╟' | '╢' => true,
+      _ => false,
+    }
+  };
+}
+
+///
+macro_rules! is_vert_line_left {
+  ($ch:expr) => {
+    match $ch {
+      '│' | '├' | '║' | '╟' => true,
+      _ => false,
+    }
+  };
+}
+
 /// Row of characters.
-#[derive(Debug, Default, Clone)]
 pub struct Row {
   /// Characters in a row.
   pub columns: Vec<char>,
 }
 
-impl ToString for Row {
-  /// Converts [Row] into its string representation.
-  fn to_string(&self) -> String {
-    self.columns.iter().collect()
+impl Display for Row {
+  /// Converts a [Row] into its string representation.
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{}", self.columns.iter().collect::<String>())
+  }
+}
+
+impl Row {
+  /// Creates a new row with specified characters.
+  pub fn new(columns: Vec<char>) -> Self {
+    Self { columns }
   }
 }
 
 /// Plane containing rows of characters.
-#[derive(Debug, Default, Clone)]
 pub struct Plane {
   /// Rows in plane.
   pub rows: Vec<Row>,
@@ -61,6 +91,13 @@ pub struct Plane {
   pub offset_y: isize,
 }
 
+impl Display for Plane {
+  /// Converts a [Plane] into its string representation.
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{}", self.rows.iter().fold("".to_string(), |acc, row| format!("{}\n{}", acc, row)).trim())
+  }
+}
+
 impl Plane {
   /// Creates a plane from text.
   pub fn new(content: &str) -> Self {
@@ -68,11 +105,11 @@ impl Plane {
     for content_line in content.lines() {
       let line = content_line.trim();
       if !line.is_empty() {
-        let mut row = Row::default();
+        let mut columns = vec![];
         for ch in line.chars() {
-          row.columns.push(ch);
+          columns.push(ch);
         }
-        rows.push(row);
+        rows.push(Row::new(columns));
       }
     }
     Self {
@@ -81,6 +118,16 @@ impl Plane {
       pos_y: 1,
       offset_x: 0,
       offset_y: 0,
+    }
+  }
+  /// Sets a new position of the cursor.
+  pub fn move_cursor(&mut self, row_offset: i32, col_offset: i32) {
+    if self.is_allowed(row_offset, col_offset) {
+      let (row, col) = self.adjusted_position(row_offset, col_offset);
+      if (1..self.rows.len() - 1).contains(&row) && (1..self.rows[row].columns.len() - 1).contains(&col) {
+        self.pos_y = row;
+        self.pos_x = col;
+      }
     }
   }
   /// Returns the horizontal position of the cursor in screen coordinates.
@@ -94,11 +141,11 @@ impl Plane {
   /// Moves cursor up.
   pub fn move_up(&mut self) -> bool {
     if self.is_allowed(-1, 0) {
-      self.pos_y -= 1;
+      self.move_cursor(-1, 0);
       return true;
     }
     if self.is_horz_line(-1, 0) && self.is_allowed(-2, 0) {
-      self.pos_y -= 2;
+      self.move_cursor(-2, 0);
       return true;
     }
     false
@@ -180,46 +227,55 @@ impl Plane {
       deleted = true;
     }
     if deleted {
-      // check if the character deletion in other rows is possible
-      let mut can_delete = true;
-      for (row_index, row) in self.rows.iter_mut().enumerate() {
-        if row_index != self.pos_y && self.pos_x < row.columns.len() - 1 {
-          for (col_index, ch) in row.columns[self.pos_x..].iter().enumerate() {
-            if matches!(ch, '│' | '├' | '║' | '╟') {
-              if row.columns[self.pos_x + col_index - 1] != ' ' {
-                can_delete = false;
-              }
-              break;
-            }
-          }
-        }
-      }
-      if can_delete {
-        for (row_index, row) in self.rows.iter_mut().enumerate() {
-          if row_index != self.pos_y && self.pos_x < row.columns.len() - 1 {
-            let mut found_index = 0;
-            for (col_index, ch) in row.columns[self.pos_x..].iter().enumerate() {
-              if matches!(
-                ch,
-                '│' | '┼' | '┬' | '┴' | '╪' | '┐' | '┘' | '├' | '║' | '╟' | '╬' | '╥' | '╨' | '╫' | '╢' | '┤' | '╡'
-              ) {
-                found_index = self.pos_x + col_index;
-                break;
-              }
-            }
-            if found_index > 0 {
-              row.columns.remove(found_index - 1);
-            }
-          }
-        }
+      if self.can_vert_delete() {
+        self.vert_delete();
       } else {
         self.rows[self.pos_y].columns.insert(self.pos_x + 1, ' ');
       }
     }
   }
+  /// Returns `true` when deletion before vertical line is possible.
+  ///
+  /// (describe in details)
+  ///
+  fn can_vert_delete(&self) -> bool {
+    for (row_index, row) in self.rows.iter().enumerate() {
+      if row_index != self.pos_y && (1..row.columns.len() - 1).contains(&self.pos_x) {
+        for (col_index, ch) in row.columns[self.pos_x..].iter().enumerate() {
+          if is_vert_line_left!(ch) {
+            if row.columns[self.pos_x + col_index - 1] != CH_WS {
+              return false;
+            }
+            break;
+          }
+        }
+      }
+    }
+    true
+  }
+  ///
+  fn vert_delete(&mut self) {
+    for (row_index, row) in self.rows.iter_mut().enumerate() {
+      if row_index != self.pos_y && self.pos_x < row.columns.len() - 1 {
+        let mut found_index = 0;
+        for (col_index, ch) in row.columns[self.pos_x..].iter().enumerate() {
+          if matches!(
+            ch,
+            '│' | '┼' | '┬' | '┴' | '╪' | '┐' | '┘' | '├' | '║' | '╟' | '╬' | '╥' | '╨' | '╫' | '╢' | '┤' | '╡'
+          ) {
+            found_index = self.pos_x + col_index;
+            break;
+          }
+        }
+        if found_index > 0 {
+          row.columns.remove(found_index - 1);
+        }
+      }
+    }
+  }
   /// Returns `true` when the character at the specified position is a horizontal line.
   fn is_horz_line(&self, row_offset: i32, col_offset: i32) -> bool {
-    let (r, c) = self.apply_offset(row_offset, col_offset);
+    let (r, c) = self.adjusted_position(row_offset, col_offset);
     if r < self.rows.len() && c < self.rows[r].columns.len() {
       matches!(self.rows[r].columns[c], '─' | '═')
     } else {
@@ -228,7 +284,7 @@ impl Plane {
   }
   /// Returns `true` when the character at the specified position is a vertical line.
   fn is_vert_line(&self, row_offset: i32, col_offset: i32) -> bool {
-    let (r, c) = self.apply_offset(row_offset, col_offset);
+    let (r, c) = self.adjusted_position(row_offset, col_offset);
     if r < self.rows.len() && c < self.rows[r].columns.len() {
       matches!(self.rows[r].columns[c], '│' | '║')
     } else {
@@ -237,15 +293,15 @@ impl Plane {
   }
   /// Returns `true` when the cursor position is allowed according to horizontal and vertical offset.
   fn is_allowed(&self, row_offset: i32, col_offset: i32) -> bool {
-    let (r, c) = self.apply_offset(row_offset, col_offset);
+    let (r, c) = self.adjusted_position(row_offset, col_offset);
     if r > 0 && r < self.rows.len() - 1 && c > 0 && c < self.rows[r].columns.len() - 1 {
-      self.is_box_drawing_char(self.rows[r].columns[c])
+      !is_box_drawing_char!(self.rows[r].columns[c])
     } else {
       false
     }
   }
-  /// Calculates new position according the specified offset.
-  fn apply_offset(&self, row_offset: i32, col_offset: i32) -> (usize, usize) {
+  /// Calculates new position adjusted with the specified row and column offset.
+  fn adjusted_position(&self, row_offset: i32, col_offset: i32) -> (usize, usize) {
     (
       if row_offset >= 0 {
         self.pos_y.saturating_add(row_offset.unsigned_abs() as usize)
@@ -258,10 +314,5 @@ impl Plane {
         self.pos_x.saturating_sub(col_offset.unsigned_abs() as usize)
       },
     )
-  }
-  /// Returns `true` when the character is not a box-drawing character.
-  #[rustfmt::skip]
-  fn is_box_drawing_char(&self, ch: char) -> bool {
-    !matches!(ch, '┌' | '┐' | '└' | '┘' | '─' | '│' | '├' | '┤' | '┴' | '┬' | '┼' | '╪' | '╫' | '╬' | '╞' | '╡' | '╥' | '╨' | '═' | '║' | '╟' | '╢')
   }
 }
