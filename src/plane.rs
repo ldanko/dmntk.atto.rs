@@ -333,12 +333,12 @@ impl Plane {
 
   /// Deletes a character placed *under* the cursor.
   pub fn delete_character(&mut self, double: bool) {
-    self.rows[self.pos_row].columns.remove(self.pos_col);
     if self.is_vert_space(double) {
       self.vert_delete();
     } else {
       self.insert_whitespace_before_vert_line();
     }
+    self.rows[self.pos_row].columns.remove(self.pos_col);
     if is_box_drawing_character!(self.cur_char()) {
       self.move_cursor(0, -1);
     }
@@ -440,12 +440,9 @@ impl Plane {
   fn is_vert_double_space(&self) -> bool {
     for (row_index, row) in self.rows.iter().enumerate() {
       if row_index != self.pos_row && (1..row.columns.len() - 1).contains(&self.pos_col) {
-        for chars in row.columns[self.pos_col - 1..].windows(4) {
-          if is_vertical_line_left!(chars[3]) {
-            if chars[1] != CH_WS || chars[2] != CH_WS {
-              return false;
-            }
-            if is_box_drawing_character!(chars[0]) {
+        for chars in row.columns[self.pos_col - 1..].windows(3) {
+          if is_vertical_line_left!(chars[2]) {
+            if chars[0] != CH_WS || chars[1] != CH_WS {
               return false;
             }
             break;
