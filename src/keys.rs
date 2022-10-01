@@ -54,6 +54,9 @@ pub const KN_HOME: &str = "KEY_HOME";
 /// LEFT arrow
 pub const KN_LEFT: &str = "KEY_LEFT";
 
+/// Resize
+pub const KN_RESIZE: &str = "KEY_RESIZE";
+
 /// RIGHT arrow
 pub const KN_RIGHT: &str = "KEY_RIGHT";
 

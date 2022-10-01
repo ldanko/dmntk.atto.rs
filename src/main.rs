@@ -45,18 +45,20 @@ use plane::*;
 use std::{env, fs};
 
 /// Initializes ncurses.
-fn initialize() {
+fn initialize() -> WINDOW {
   // set locale to Unicode en-US
   let locale_conf = LcCategory::all;
   setlocale(locale_conf, "en_US.UTF-8");
   // start ncurses
-  initscr();
+  let window = initscr();
   // switch to raw mode
   raw();
   // allow for extended keyboard (like F1)
-  keypad(stdscr(), true);
+  keypad(window, true);
   // disable echo
   noecho();
+  // return current window handler
+  window
 }
 
 /// Terminates ncurses.
@@ -86,9 +88,11 @@ fn repaint_plane(plane: &Plane) {
 }
 
 /// Processes input keystrokes.
-fn process_keystrokes(plane: &mut Plane) {
+fn process_keystrokes(plane: &mut Plane, window: WINDOW) {
   let mut cur_x = 0;
   let mut cur_y = 0;
+  let mut max_x = 0;
+  let mut max_y = 0;
   for row in &plane.rows {
     mv(cur_y, cur_x);
     addstr(&row.to_string());
@@ -164,6 +168,16 @@ fn process_keystrokes(plane: &mut Plane) {
           mv(plane.cur_screen_row(), plane.cur_screen_col());
         }
       }
+      KN_RESIZE => {
+        getmaxyx(window, &mut max_y, &mut max_x);
+        // getyx(window, &mut cur_y, &mut cur_x);
+        // attron(A_REVERSE());
+        // mvaddstr(43, 1, &format!("{}:{}", max_x, max_y));
+        // attroff(A_REVERSE());
+        // mv(cur_y, cur_x);
+        // refresh();
+        a(window, max_x, max_y, plane.cur_screen_col(), plane.cur_screen_row());
+      }
       _ => match ch {
         32..=127 => {
           if let Some(new_ch) = char::from_u32(ch as u32) {
@@ -172,7 +186,7 @@ fn process_keystrokes(plane: &mut Plane) {
           }
         }
         _ => {
-          getyx(stdscr(), &mut cur_y, &mut cur_x);
+          getyx(window, &mut cur_y, &mut cur_x);
           mvaddstr(40, 1, &format!("{:X}", ch));
           mvaddstr(41, 1, &format!("{:40}", key_name));
           mv(cur_y, cur_x);
@@ -181,6 +195,18 @@ fn process_keystrokes(plane: &mut Plane) {
       },
     }
   }
+}
+
+fn a(window: WINDOW, max_x: i32, max_y: i32, screen_x: i32, screen_y: i32) {
+  let mut cur_x = 0;
+  let mut cur_y = 0;
+  getyx(window, &mut cur_y, &mut cur_x);
+  let s = format!("{:>width$}", format!("{}:{} ", screen_x, screen_y), width = max_x as usize);
+  attron(A_REVERSE());
+  mvaddstr(max_y - 1, 0, &s);
+  attroff(A_REVERSE());
+  mv(cur_y, cur_x);
+  refresh();
 }
 
 /// Prints usage message.
@@ -195,9 +221,9 @@ fn main() {
     usage();
     return;
   }
-  initialize();
+  let window = initialize();
   if let Some(mut plane) = load_from_file(&args[1]) {
-    process_keystrokes(&mut plane);
+    process_keystrokes(&mut plane, window);
   }
   finalize();
 }
