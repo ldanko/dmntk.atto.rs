@@ -4,7 +4,7 @@
 
 ## Overview
 
-**atto** is a terminal based editor for decision tables.
+Terminal based editor for decision tables.
 
 ## Dependencies
 
