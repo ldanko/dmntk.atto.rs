@@ -439,13 +439,16 @@ impl Plane {
   /// vertical line to the right from the current cursor position, in all rows.
   fn is_vert_double_space(&self) -> bool {
     for (row_index, row) in self.rows.iter().enumerate() {
-      if row_index != self.pos_row && (1..row.columns.len() - 1).contains(&self.pos_col) {
-        for chars in row.columns[self.pos_col - 1..].windows(3) {
-          if is_vertical_line_left!(chars[2]) {
-            if chars[0] != CH_WS || chars[1] != CH_WS {
-              return false;
+      if (1..row.columns.len() - 1).contains(&self.pos_col) {
+        let ch = self.rows[row_index].columns[self.pos_col];
+        if !is_box_drawing_character!(ch) {
+          for chars in row.columns[self.pos_col - 1..].windows(3) {
+            if is_vertical_line_left!(chars[2]) {
+              if chars[0] != CH_WS || chars[1] != CH_WS {
+                return false;
+              }
+              break;
             }
-            break;
           }
         }
       }

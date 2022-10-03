@@ -3,7 +3,7 @@ use crate::Plane;
 
 #[test]
 fn _0001() {
-  let plane = Plane::new(EX_001);
-  assert_eq!(EX_001.trim(), plane.to_string());
-  assert_eq!(EX_001.trim(), format!("{}", plane));
+  let plane = Plane::new(TEST_INPUT_001);
+  assert_eq!(TEST_INPUT_001.trim(), plane.to_string());
+  assert_eq!(TEST_INPUT_001.trim(), format!("{}", plane));
 }

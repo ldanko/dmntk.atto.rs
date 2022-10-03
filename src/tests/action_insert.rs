@@ -23,7 +23,7 @@ const EXPECTED_0001: &str = r#"
 
 #[test]
 fn _0001() {
-  let plane = &mut Plane::new(EX_001);
+  let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
   plane.move_cursor(3, 0);
   plane.insert_character('A');
