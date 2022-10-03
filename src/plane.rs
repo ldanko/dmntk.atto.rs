@@ -320,7 +320,8 @@ impl Plane {
 
   /// Deletes a character placed *before* the cursor.
   pub fn delete_character_before(&mut self) {
-    if !self.is_vert_line(0, -1) {
+    // check if there is no box-drawing character before cursor
+    if self.is_allowed(0, -1) {
       self.rows[self.pos_row].columns.remove(self.pos_col - 1);
       self.move_cursor(0, -1);
       if self.is_vert_space() {
