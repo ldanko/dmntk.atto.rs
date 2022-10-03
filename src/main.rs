@@ -106,8 +106,6 @@ impl Editor {
   fn process_keystrokes(&mut self) {
     let mut cur_x = 0;
     let mut cur_y = 0;
-    let mut max_x = 0;
-    let mut max_y = 0;
     for row in &self.plane.rows {
       mv(cur_y, cur_x);
       addstr(&row.to_string());
@@ -205,14 +203,13 @@ impl Editor {
           }
         }
         KN_RESIZE => {
-          getmaxyx(self.window, &mut max_y, &mut max_x);
+          // getmaxyx(self.window, &mut max_y, &mut max_x);
           // getyx(window, &mut cur_y, &mut cur_x);
           // attron(A_REVERSE());
           // mvaddstr(43, 1, &format!("{}:{}", max_x, max_y));
           // attroff(A_REVERSE());
           // mv(cur_y, cur_x);
           // refresh();
-          a(self.window, max_x, max_y, self.plane.cur_screen_col(), self.plane.cur_screen_row());
         }
         _ => match ch {
           32..=126 => {
@@ -235,18 +232,6 @@ impl Editor {
       }
     }
   }
-}
-
-fn a(window: WINDOW, max_x: i32, max_y: i32, screen_x: i32, screen_y: i32) {
-  let mut cur_x = 0;
-  let mut cur_y = 0;
-  getyx(window, &mut cur_y, &mut cur_x);
-  let s = format!("{:>width$}", format!("{}:{} ", screen_x, screen_y), width = max_x as usize);
-  attron(A_REVERSE());
-  mvaddstr(max_y - 1, 0, &s);
-  attroff(A_REVERSE());
-  mv(cur_y, cur_x);
-  refresh();
 }
 
 /// Prints usage message.
