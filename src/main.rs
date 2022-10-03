@@ -105,8 +105,8 @@ impl Editor {
   /// Processes input keystrokes.
   fn process_keystrokes(&mut self) {
     loop {
-      let ch = getch();
-      let key_name = keyname(ch).unwrap_or_default();
+      let key = getch();
+      let key_name = keyname(key).unwrap_or_default();
       match key_name.as_str() {
         KN_CTRL_Q => break,
         KN_UP => {
@@ -201,15 +201,14 @@ impl Editor {
           // mv(cur_y, cur_x);
           // refresh();
         }
-        _ => match ch {
+        _ => match key {
           32..=126 => {
-            if let Some(new_ch) = char::from_u32(ch as u32) {
-              self.plane.insert_character(new_ch);
-              self.repaint_plane();
-              self.update_cursor();
-              self.update_cursor_coordinates();
-              refresh();
-            }
+            let ch = char::from_u32(key as u32).unwrap();
+            self.plane.insert_character(ch);
+            self.repaint_plane();
+            self.update_cursor();
+            self.update_cursor_coordinates();
+            refresh();
           }
           _ => {
             let mut x = 0;
@@ -218,7 +217,7 @@ impl Editor {
             let mut my = 0;
             getyx(self.window, &mut y, &mut x);
             getmaxyx(self.window, &mut my, &mut mx);
-            mvaddstr(my - 1, 30, &format!("[{} | {:40}]", ch, key_name));
+            mvaddstr(my - 1, 30, &format!("{} | {:40}", key, key_name));
             mv(y, x);
             refresh();
           }
