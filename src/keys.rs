@@ -70,9 +70,6 @@ pub const KN_UP: &str = "KEY_UP";
 // SHIFT + key
 //--------------------------------------------------------------------------------------------------
 
-/// Shift + DELETE
-pub const KN_SHIFT_DELETE: &str = "KEY_SDC";
-
 /// Shift + END
 pub const KN_SHIFT_END: &str = "KEY_SEND";
 

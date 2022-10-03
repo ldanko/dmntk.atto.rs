@@ -26,7 +26,7 @@ fn _0001() {
   let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
   plane.move_cursor(3, 2);
-  plane.delete_character_before(false);
+  plane.delete_character_before();
   eq(EXPECTED_0001, plane);
 }
 
@@ -55,7 +55,7 @@ fn _0002() {
   let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
   plane.move_cursor(3, 13);
-  plane.delete_character_before(false);
+  plane.delete_character_before();
   eq(EXPECTED_0002, plane);
 }
 
@@ -85,7 +85,7 @@ fn _0003() {
   eq_cursor(1, 1, plane);
   plane.move_cursor(6, 14);
   repeat(3, || {
-    plane.delete_character_before(false);
+    plane.delete_character_before();
   });
   eq(EXPECTED_0003, plane);
 }
@@ -116,7 +116,7 @@ fn _0004() {
   eq_cursor(1, 1, plane);
   plane.move_cursor(3, 9);
   repeat(4, || {
-    plane.delete_character(false);
+    plane.delete_character();
   });
   eq(EXPECTED_0004, plane);
 }
@@ -146,7 +146,8 @@ fn _0005() {
   let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
   plane.move_cursor(6, 14);
-  plane.delete_character(false);
+  plane.delete_character();
+  plane.delete_character();
   eq_cursor(7, 14, plane);
   eq(EXPECTED_0005, plane);
 }
@@ -176,7 +177,7 @@ fn _0006() {
   let plane = &mut Plane::new(TEST_INPUT_002);
   eq_cursor(1, 1, plane);
   plane.move_cursor(14, 4);
-  plane.delete_character(false);
+  plane.delete_character();
   eq_cursor(15, 5, plane);
   eq(EXPECTED_0006, plane);
 }
@@ -207,7 +208,7 @@ fn _0007() {
   eq_cursor(1, 1, plane);
   plane.move_cursor(6, 34);
   eq_cursor(7, 35, plane);
-  plane.delete_character(true);
+  plane.delete_character();
   eq_cursor(7, 34, plane);
   eq(EXPECTED_0007, plane);
 }

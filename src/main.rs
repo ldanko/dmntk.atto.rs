@@ -150,24 +150,17 @@ impl Editor {
           }
         }
         KN_BACKSPACE => {
-          self.plane.delete_character_before(true);
+          self.plane.delete_character_before();
           self.repaint_plane();
           self.update_cursor();
           self.update_cursor_coordinates();
           refresh();
         }
         KN_DELETE => {
-          self.plane.delete_character(true);
+          self.plane.delete_character();
           self.repaint_plane();
           self.update_cursor();
           self.update_cursor_coordinates();
-        }
-        KN_SHIFT_DELETE => {
-          self.plane.delete_character(false);
-          self.repaint_plane();
-          self.update_cursor();
-          self.update_cursor_coordinates();
-          refresh();
         }
         KN_HOME => {
           if self.plane.move_cell_start() {
