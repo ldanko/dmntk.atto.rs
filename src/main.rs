@@ -104,16 +104,6 @@ impl Editor {
   }
   /// Processes input keystrokes.
   fn process_keystrokes(&mut self) {
-    let mut cur_x = 0;
-    let mut cur_y = 0;
-    for row in &self.plane.rows {
-      mv(cur_y, cur_x);
-      addstr(&row.to_string());
-      cur_y += 1;
-    }
-    self.update_cursor();
-    self.update_cursor_coordinates();
-    refresh();
     loop {
       let ch = getch();
       let key_name = keyname(ch).unwrap_or_default();
@@ -222,10 +212,14 @@ impl Editor {
             }
           }
           _ => {
-            getyx(self.window, &mut cur_y, &mut cur_x);
-            mvaddstr(40, 1, &format!("{:X}", ch));
-            mvaddstr(41, 1, &format!("{:40}", key_name));
-            mv(cur_y, cur_x);
+            let mut x = 0;
+            let mut y = 0;
+            let mut mx = 0;
+            let mut my = 0;
+            getyx(self.window, &mut y, &mut x);
+            getmaxyx(self.window, &mut my, &mut mx);
+            mvaddstr(my - 1, 30, &format!("[{} | {:40}]", ch, key_name));
+            mv(y, x);
             refresh();
           }
         },
@@ -247,6 +241,10 @@ fn main() -> Result<()> {
     return Err(err_invalid_arguments());
   }
   let mut editor = Editor::new(&args[1])?;
+  editor.repaint_plane();
+  editor.update_cursor();
+  editor.update_cursor_coordinates();
+  refresh();
   editor.process_keystrokes();
   editor.finalize()
 }
