@@ -38,6 +38,7 @@ mod errors;
 mod keys;
 mod plane;
 #[cfg(test)]
+#[macro_use]
 mod tests;
 
 use errors::*;
@@ -77,7 +78,7 @@ impl Editor {
   }
   /// Updates cursor position.
   fn update_cursor(&self) {
-    mv(self.plane.cur_screen_row(), self.plane.cur_screen_col());
+    mv(self.plane.cursor_row(), self.plane.cursor_col());
   }
   /// Updates cursor coordinates in status bar.
   fn update_cursor_coordinates(&self) {
@@ -90,7 +91,7 @@ impl Editor {
     mvaddstr(
       max_y - 1,
       max_x - 20,
-      &format!("{:>20}", format!("{}:{} ", self.plane.cur_screen_col(), self.plane.cur_screen_row())),
+      &format!("{:>20}", format!("{}:{} ", self.plane.cursor_col(), self.plane.cursor_row())),
     );
     mv(cur_y, cur_x);
   }
@@ -110,28 +111,28 @@ impl Editor {
       match key_name.as_str() {
         KN_CTRL_Q => break,
         KN_UP => {
-          if self.plane.move_up() {
+          if self.plane.cursor_move_up() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
         KN_DOWN => {
-          if self.plane.move_down() {
+          if self.plane.cursor_move_down() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
         KN_LEFT => {
-          if self.plane.move_left() {
+          if self.plane.cursor_move_left() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
         KN_RIGHT => {
-          if self.plane.move_right() {
+          if self.plane.cursor_move_right() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
@@ -151,42 +152,42 @@ impl Editor {
           self.update_cursor_coordinates();
         }
         KN_HOME => {
-          if self.plane.move_cell_start() {
+          if self.plane.cursor_move_cell_start() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
         KN_END => {
-          if self.plane.move_cell_end() {
+          if self.plane.cursor_move_cell_end() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
         KN_SHIFT_HOME => {
-          if self.plane.move_table_start() {
+          if self.plane.cursor_move_table_start() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
         KN_SHIFT_END => {
-          if self.plane.move_table_end() {
+          if self.plane.cursor_move_table_end() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
         KN_TAB => {
-          if self.plane.move_cell_next() {
+          if self.plane.cursor_move_cell_right() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
         KN_SHIFT_TAB => {
-          if self.plane.move_cell_prev() {
+          if self.plane.cursor_move_cell_left() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();

@@ -5,8 +5,9 @@ use crate::Plane;
 fn _0001() {
   let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
-  plane.move_cursor(3, 2);
-  plane.delete_character_before_cursor();
+  repeat!(2, plane, cursor_move_down);
+  repeat!(2, plane, cursor_move_right);
+  repeat!(1, plane, delete_character_before_cursor);
   let expected = r#"
 ┌─────────────────────────────────────┐
 │ Order options                       │
@@ -33,8 +34,9 @@ fn _0001() {
 fn _0002() {
   let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
-  plane.move_cursor(3, 13);
-  plane.delete_character_before_cursor();
+  repeat!(2, plane, cursor_move_down);
+  repeat!(12, plane, cursor_move_right);
+  repeat!(1, plane, delete_character_before_cursor);
   let expected = r#"
 ┌─────────────────────────────────────┐
 │ Order options                       │
@@ -61,10 +63,9 @@ fn _0002() {
 fn _0003() {
   let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
-  plane.move_cursor(6, 14);
-  repeat(3, || {
-    plane.delete_character_before_cursor();
-  });
+  repeat!(5, plane, cursor_move_down);
+  repeat!(13, plane, cursor_move_right);
+  repeat!(3, plane, delete_character_before_cursor);
   let expected = r#"
 ┌─────────────────────────────────────┐
 │ Order options                       │
@@ -91,10 +92,9 @@ fn _0003() {
 fn _0004() {
   let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
-  plane.move_cursor(3, 9);
-  repeat(4, || {
-    plane.delete_character_under_cursor();
-  });
+  repeat!(2, plane, cursor_move_down);
+  repeat!(8, plane, cursor_move_right);
+  repeat!(4, plane, delete_character_under_cursor);
   let expected = r#"
 ┌─────────────────────────────────────┐
 │ Order options                       │
@@ -121,9 +121,9 @@ fn _0004() {
 fn _0005() {
   let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
-  plane.move_cursor(6, 14);
-  plane.delete_character_under_cursor();
-  plane.delete_character_under_cursor();
+  repeat!(5, plane, cursor_move_down);
+  repeat!(13, plane, cursor_move_right);
+  repeat!(2, plane, delete_character_under_cursor);
   eq_cursor(7, 14, plane);
   let expected = r#"
 ┌─────────────────────────────────────┐
@@ -149,15 +149,28 @@ fn _0005() {
 
 #[test]
 fn _0006() {
-  let plane = &mut Plane::new(TEST_INPUT_002);
+  let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
-  plane.move_cursor(14, 4);
-  plane.delete_character_under_cursor();
+  repeat!(2, plane, cursor_move_down);
+  repeat!(3, plane, cursor_move_right);
+  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(1, plane, cursor_move_down);
+  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(1, plane, cursor_move_down);
+  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(1, plane, cursor_move_down);
+  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(2, plane, cursor_move_down);
+  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(1, plane, cursor_move_down);
+  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(1, plane, cursor_move_down);
+  repeat!(15, plane, delete_character_under_cursor);
   eq_cursor(15, 5, plane);
   let expected = r#"
-┌───────────────────────────┐
-│ Order options             │
-├───┬─┬───────╥─────────────┴───────╥─────────────┬───────────┐
+┌──────────────────────────────────────┐
+│ Order options                        │
+├───┬─┬───────╥─────────────────────╥──┴──────────┬───────────┐
 │ U │ │       ║    Order options    ║             │           │
 │   │ │ Order ╟──────────┬──────────╢ Description │ Reference │
 │   │ │ size  ║ Discount │ Priority ║             │           │
@@ -178,30 +191,30 @@ fn _0006() {
 
 #[test]
 fn _0007() {
-  let plane = &mut Plane::new(TEST_INPUT_003);
+  let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
-  plane.move_cursor(6, 34);
-  eq_cursor(7, 35, plane);
-  plane.delete_character_under_cursor();
-  eq_cursor(7, 34, plane);
+  repeat!(5, plane, cursor_move_down);
+  repeat!(40, plane, cursor_move_right);
+  repeat!(1, plane, delete_character_under_cursor);
+  eq_cursor(7, 44, plane);
   let expected = r#"
-┌──────────────────────────────────────┐
-│ Order options                        │
-├───┬───────────┬───────╥──────────────┴──────╥─────────────┬───────────┐
-│ U │           │       ║    Order options    ║             │           │
-│   │ Customer  │ Order ╟──────────┬──────────╢ Description │ Reference │
-│   │   type    │ size  ║ Discount │ Priority ║             │           │
-│   ├───────────┼───────╫──────────┼──────────╫─────────────┼───────────┤
-│   │"Business",│  <10, ║   0.10,  │"Normal", ║             │           │
-│   │"Private"  │ >=10  ║   0.15,  │ "High",  ║             │           │
-│   │           │       ║   0.05   │ "Low"    ║             │           │
-╞═══╪═══════════╪═══════╬══════════╪══════════╬═════════════╪═══════════╡
-│ 1 │"Business" │  <10  ║   0.10   │ "Normal" ║ Small order │   Ref 1   │
-├───┼───────────┼───────╫──────────┼──────────╫─────────────┼───────────┤
-│ 2 │"Business" │ >=10  ║   0.15   │ "High"   ║ Large order │   Ref 2   │
-├───┼───────────┼───────╫──────────┼──────────╫─────────────┼───────────┤
-│ 3 │"Private"  │   -   ║   0.05   │ "Low"    ║ All orders  │   Ref 3   │
-└───┴───────────┴───────╨──────────┴──────────╨─────────────┴───────────┘
+┌─────────────────────────────────────┐
+│ Order options                       │
+├───┬───────────┬───────╥─────────────┴──────╥─────────────┬───────────┐
+│ U │           │       ║    Order options   ║             │           │
+│   │ Customer  │ Order ╟──────────┬─────────╢ Description │ Reference │
+│   │   type    │ size  ║ Discount │ Priority║             │           │
+│   ├───────────┼───────╫──────────┼─────────╫─────────────┼───────────┤
+│   │"Business",│  <10, ║   0.10,  │"Normal",║             │           │
+│   │"Private"  │ >=10  ║   0.15,  │ "High", ║             │           │
+│   │           │       ║   0.05   │ "Low"   ║             │           │
+╞═══╪═══════════╪═══════╬══════════╪═════════╬═════════════╪═══════════╡
+│ 1 │"Business" │  <10  ║   0.10   │ "Normal"║ Small order │   Ref 1   │
+├───┼───────────┼───────╫──────────┼─────────╫─────────────┼───────────┤
+│ 2 │"Business" │ >=10  ║   0.15   │ "High"  ║ Large order │   Ref 2   │
+├───┼───────────┼───────╫──────────┼─────────╫─────────────┼───────────┤
+│ 3 │"Private"  │   -   ║   0.05   │ "Low"   ║ All orders  │   Ref 3   │
+└───┴───────────┴───────╨──────────┴─────────╨─────────────┴───────────┘
 "#;
   eq(plane, expected);
 }
@@ -210,9 +223,11 @@ fn _0007() {
 fn _0008() {
   let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
-  plane.move_cursor(3, 46);
+  repeat!(1, plane, cursor_move_down);
+  repeat!(42, plane, cursor_move_right);
+  repeat!(1, plane, cursor_move_down);
   eq_cursor(4, 47, plane);
-  plane.delete_character_before_cursor();
+  repeat!(1, plane, delete_character_before_cursor);
   eq_cursor(4, 47, plane);
   let expected = r#"
 ┌─────────────────────────────────────┐

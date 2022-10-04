@@ -5,7 +5,7 @@ use crate::Plane;
 fn _0001() {
   let plane = &mut Plane::new(TEST_INPUT_001);
   eq_cursor(1, 1, plane);
-  plane.move_cursor(3, 0);
+  repeat!(2, plane, cursor_move_down);
   plane.insert_character('A');
   let expected = r#"
 ┌─────────────────────────────────────┐
