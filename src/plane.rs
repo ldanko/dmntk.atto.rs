@@ -105,6 +105,8 @@ pub struct Plane {
   row: usize,
   /// Current horizontal cursor position (column index).
   col: usize,
+  /// Information item height (0 when not present).
+  iih: usize,
 }
 
 impl Display for Plane {
@@ -132,7 +134,8 @@ impl Plane {
         rows.push(Row::new(columns));
       }
     }
-    Self { rows, row: 1, col: 1 }
+    let iih = information_item_height(&rows);
+    Self { rows, row: 1, col: 1, iih }
   }
 
   /// Returns a reference to rows.
@@ -297,7 +300,7 @@ impl Plane {
       } else {
         self.a();
         self.insert_column_before_vert_line_crossing();
-        self.b(self.row < self.information_item_height());
+        self.b(self.row < self.iih);
       }
       self.cursor_move(0, 1);
     }
@@ -312,7 +315,7 @@ impl Plane {
       if self.whitespaces_before_vert_line(pos) {
         self.a();
         self.delete_character_before_vert_line(pos);
-        self.b(self.row > self.information_item_height());
+        self.b(self.row > self.iih);
       } else {
         self.insert_whitespace_before_vert_line();
       }
@@ -325,7 +328,7 @@ impl Plane {
     if self.whitespaces_before_vert_line(pos) {
       self.a();
       self.delete_character_before_vert_line(pos);
-      self.b(self.row > self.information_item_height());
+      self.b(self.row > self.iih);
     } else {
       self.insert_whitespace_before_vert_line();
     }
@@ -348,7 +351,7 @@ impl Plane {
 
   /// Update connection with information item name cell.
   fn a(&mut self) {
-    let i = self.information_item_height();
+    let i = self.iih;
     if i > 0 {
       let pos = self.rows[0].columns.len() - 1;
       if pos < self.rows[i].columns.len() {
@@ -364,7 +367,7 @@ impl Plane {
 
   /// Update connection with information item name cell.
   fn b(&mut self, from_left: bool) {
-    let i = self.information_item_height();
+    let i = self.iih;
     if i > 0 {
       let pos = self.rows[0].columns.len() - 1;
       if pos < self.rows[i].columns.len() {
@@ -587,28 +590,27 @@ impl Plane {
 
   ///
   fn rows_skip_and_take(&self) -> (usize, usize) {
-    let height = self.information_item_height();
-    if self.row < height {
-      (0, height - 1)
+    if self.row < self.iih {
+      (0, self.iih - 1)
     } else {
-      (height, self.rows.len() - height)
+      (self.iih, self.rows.len() - self.iih)
     }
   }
+}
 
-  /// Returns the height of the information item.
-  ///
-  //TODO Information item name height does not have to be calculated each time, it may be stored as property an updated when needed - it will be faster
-  fn information_item_height(&self) -> usize {
-    for (row_index, row) in self.rows.iter().enumerate() {
-      for (col_index, ch) in row.columns.iter().enumerate() {
-        if col_index == 0 && *ch != '┌' && *ch != '├' {
-          break; // skip rows that do not begin with horizontal line crossing
-        }
-        if *ch == '╥' {
-          return row_index; // index of the row that contains '╥' character is the height
-        }
+/// Calculates the height of the information item cell at the beginning of the decision table.
+fn information_item_height(rows: &[Row]) -> usize {
+  for (row_index, row) in rows.iter().enumerate() {
+    for (col_index, ch) in row.columns.iter().enumerate() {
+      if col_index == 0 && *ch != '┌' && *ch != '├' {
+        // skip rows that do not begin with horizontal line crossing
+        break;
+      }
+      if *ch == '╥' {
+        // index of the row that contains '╥' character is the height
+        return row_index;
       }
     }
-    0
   }
+  0
 }
