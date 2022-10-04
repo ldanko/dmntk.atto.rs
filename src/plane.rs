@@ -320,11 +320,10 @@ impl Plane {
 
   /// Deletes a character placed *before* the cursor.
   pub fn delete_character_before(&mut self) {
-    // check if there is no box-drawing character before cursor
     if self.is_allowed(0, -1) {
       self.rows[self.pos_row].columns.remove(self.pos_col - 1);
       self.move_cursor(0, -1);
-      if self.is_vert_space() {
+      if self.spaces_before_vertical_line(self.last_position_before_vert_line()) {
         self.vert_delete();
       } else {
         self.insert_whitespace_before_vert_line();
@@ -334,7 +333,7 @@ impl Plane {
 
   /// Deletes a character placed *under* the cursor.
   pub fn delete_character(&mut self) {
-    if self.is_vert_space() {
+    if self.spaces_before_vertical_line(self.last_position_before_vert_line()) {
       self.vert_delete();
     } else {
       self.insert_whitespace_before_vert_line();
@@ -343,6 +342,16 @@ impl Plane {
     if is_box_drawing_character!(self.cur_char()) {
       self.move_cursor(0, -1);
     }
+  }
+
+  /// Returns the position of the last character before the vertical line.
+  fn last_position_before_vert_line(&self) -> usize {
+    for (pos, ch) in self.rows[self.pos_row].columns.iter().enumerate().skip(self.pos_col) {
+      if is_vertical_line_left!(ch) {
+        return pos - 1;
+      }
+    }
+    self.pos_col
   }
 
   /// Inserts whitespace character before the next vertical line to the right from the cursor.
@@ -410,16 +419,16 @@ impl Plane {
   /// vertical line to the right from the current column (at cursor position).
   /// All rows are checked, except those, for which the character found at the current
   /// column is a box-drawing character.
-  fn is_vert_space(&self) -> bool {
+  fn spaces_before_vertical_line(&self, pos: usize) -> bool {
     // iterate over all rows in plane
     for (row_index, row) in self.rows.iter().enumerate() {
       // check if the current column is not after the end of each row
-      if (1..row.columns.len() - 1).contains(&self.pos_col) {
+      if (1..row.columns.len() - 1).contains(&pos) {
         // check the character at column position, if box-drawing then skip
-        let ch = self.rows[row_index].columns[self.pos_col];
+        let ch = self.rows[row_index].columns[pos];
         if !is_box_drawing_character!(ch) {
           // move to the right until vertical line is found
-          for chars in row.columns[self.pos_col - 1..].windows(3) {
+          for chars in row.columns[pos - 1..].windows(3) {
             if is_vertical_line_left!(chars[2]) {
               // if there is no whitespace before vertical line,
               // no further checking is needed, just return `false`
