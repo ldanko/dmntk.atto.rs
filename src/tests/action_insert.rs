@@ -1,7 +1,13 @@
 use super::*;
 use crate::Plane;
 
-const EXPECTED_0001: &str = r#"
+#[test]
+fn _0001() {
+  let plane = &mut Plane::new(TEST_INPUT_001);
+  eq_cursor(1, 1, plane);
+  plane.move_cursor(3, 0);
+  plane.insert_character('A');
+  let expected = r#"
 ┌─────────────────────────────────────┐
 │ Order options                       │
 ├───┬───────────┬───────╥─────────────┴───────╥─────────────┬───────────┐
@@ -20,12 +26,5 @@ const EXPECTED_0001: &str = r#"
 │ 3 │"Private"  │   -   ║   0.05   │ "Low"    ║ All orders  │   Ref 3   │
 └───┴───────────┴───────╨──────────┴──────────╨─────────────┴───────────┘
 "#;
-
-#[test]
-fn _0001() {
-  let plane = &mut Plane::new(TEST_INPUT_001);
-  eq_cursor(1, 1, plane);
-  plane.move_cursor(3, 0);
-  plane.insert_character('A');
-  eq(plane, EXPECTED_0001);
+  eq(plane, expected);
 }
