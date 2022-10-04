@@ -36,3 +36,4 @@
 - When information item name present - edit separately from the table.
 - Add command-line arguments handling using **clap**.
 - Add initializer screen with selecting options for new decision tables.
+- Hide cursor when repainting.
