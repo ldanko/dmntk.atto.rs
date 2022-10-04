@@ -415,10 +415,10 @@ impl Plane {
     }
   }
 
-  /// Returns `true` if single whitespace is placed just before the next
-  /// vertical line to the right from the current column (at cursor position).
-  /// All rows are checked, except those, for which the character found at the current
-  /// column is a box-drawing character.
+  /// Returns `true` if there is a whitespace is before the next
+  /// vertical line to the right from the specified position.
+  /// All rows are checked, except those, for which the character
+  /// at specified position is a box-drawing character.
   fn spaces_before_vertical_line(&self, pos: usize) -> bool {
     // iterate over all rows in plane
     for (row_index, row) in self.rows.iter().enumerate() {
@@ -498,16 +498,16 @@ impl Plane {
     }
   }
 
-  /// Calculates new position adjusted with the specified row and column offset.
+  /// Calculates a new position according the specified row and column offset.
   fn adjusted_position(&self, row_offset: i32, col_offset: i32) -> (usize, usize) {
     (
       if row_offset >= 0 {
-        self.pos_row.saturating_add(row_offset.unsigned_abs() as usize)
+        self.pos_row.saturating_add(row_offset as usize)
       } else {
         self.pos_row.saturating_sub(row_offset.unsigned_abs() as usize)
       },
       if col_offset >= 0 {
-        self.pos_col.saturating_add(col_offset.unsigned_abs() as usize)
+        self.pos_col.saturating_add(col_offset as usize)
       } else {
         self.pos_col.saturating_sub(col_offset.unsigned_abs() as usize)
       },
