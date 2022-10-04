@@ -100,11 +100,11 @@ impl Row {
 /// Plane containing rows of characters.
 pub struct Plane {
   /// Rows in plane.
-  pub rows: Vec<Row>,
+  rows: Vec<Row>,
   /// Current vertical cursor position (row index).
-  pub row: usize,
+  row: usize,
   /// Current horizontal cursor position (column index).
-  pub col: usize,
+  col: usize,
 }
 
 impl Display for Plane {
@@ -133,6 +133,11 @@ impl Plane {
       }
     }
     Self { rows, row: 1, col: 1 }
+  }
+
+  /// Returns a reference to rows.
+  pub fn rows(&self) -> &[Row] {
+    &self.rows
   }
 
   /// Returns the vertical position of the cursor in screen coordinates.
