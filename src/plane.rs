@@ -135,11 +135,6 @@ impl Plane {
     Self { rows, row: 1, col: 1 }
   }
 
-  /// Returns a character *under* current cursor position.
-  pub fn cur_char(&self) -> char {
-    self.rows[self.row].columns[self.col]
-  }
-
   /// Returns the vertical position of the cursor in screen coordinates.
   pub fn cursor_row(&self) -> i32 {
     self.row as i32
@@ -330,7 +325,7 @@ impl Plane {
       self.insert_whitespace_before_vert_line();
     }
     self.rows[self.row].columns.remove(self.col);
-    if is_box_drawing_character!(self.cur_char()) {
+    if is_box_drawing_character!(self.rows[self.row].columns[self.col]) {
       self.cursor_move(0, -1);
     }
   }
