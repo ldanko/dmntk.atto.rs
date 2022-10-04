@@ -6,6 +6,8 @@
 
 Terminal based editor for decision tables.
 
+**WORK IN PROGRESS**
+
 ## Dependencies
 
 ```shell
