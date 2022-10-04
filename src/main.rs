@@ -99,7 +99,7 @@ impl Editor {
     for (r, row) in self.plane.rows.iter().enumerate() {
       mv(r as i32, 0);
       addstr(&row.to_string());
-      addstr(" ");
+      addstr("  ");
     }
   }
   /// Processes input keystrokes.

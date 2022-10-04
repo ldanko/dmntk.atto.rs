@@ -114,7 +114,11 @@ pub struct Plane {
 impl Display for Plane {
   /// Converts a [Plane] into its string representation.
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{}", self.rows.iter().fold("".to_string(), |acc, row| format!("{}\n{}", acc, row)).trim())
+    write!(
+      f,
+      "{}",
+      self.rows.iter().fold("".to_string(), |plane, row| format!("{}\n{}", plane, row)).trim()
+    )
   }
 }
 
@@ -306,15 +310,15 @@ impl Plane {
   /// Inserts a character at the current position.
   pub fn insert_character(&mut self, ch: char) {
     if self.is_valid_cursor_pos() {
-      let (count, offset) = self.whitespaces_before_vert_line();
+      let (count, offset) = self.whitespace_before_vert_line();
       let columns = &mut self.rows[self.pos_row].columns;
       columns.insert(self.pos_col, ch);
-      if count > 1 {
+      if count > 0 {
         columns.remove(self.pos_col + offset);
       } else {
         self.a();
         self.insert_column_before_vert_line_crossing();
-        self.b();
+        self.b(self.pos_row < self.information_item_height());
       }
       self.move_cursor(0, 1);
     }
@@ -326,10 +330,10 @@ impl Plane {
       self.rows[self.pos_row].columns.remove(self.pos_col - 1);
       self.move_cursor(0, -1);
       let pos = self.last_position_before_vert_line();
-      if self.only_spaces_before_vert_line(pos) {
+      if self.whitespaces_before_vert_line(pos) {
         self.a();
         self.delete_character_before_vert_line(pos);
-        self.b();
+        self.b(self.pos_row > self.information_item_height());
       } else {
         self.insert_whitespace_before_vert_line();
       }
@@ -339,10 +343,10 @@ impl Plane {
   /// Deletes a character placed *under* the cursor.
   pub fn delete_character_under_cursor(&mut self) {
     let pos = self.last_position_before_vert_line();
-    if self.only_spaces_before_vert_line(pos) {
+    if self.whitespaces_before_vert_line(pos) {
       self.a();
       self.delete_character_before_vert_line(pos);
-      self.b();
+      self.b(self.pos_row > self.information_item_height());
     } else {
       self.insert_whitespace_before_vert_line();
     }
@@ -354,7 +358,7 @@ impl Plane {
 
   /// Update connection with information item name cell.
   fn a(&mut self) {
-    let i = self.information_item_name_height();
+    let i = self.information_item_height();
     if i > 0 {
       let pos = self.rows[0].columns.len() - 1;
       if pos < self.rows[i].columns.len() {
@@ -369,8 +373,8 @@ impl Plane {
   }
 
   /// Update connection with information item name cell.
-  fn b(&mut self) {
-    let i = self.information_item_name_height();
+  fn b(&mut self, from_left: bool) {
+    let i = self.information_item_height();
     if i > 0 {
       let pos = self.rows[0].columns.len() - 1;
       if pos < self.rows[i].columns.len() {
@@ -378,6 +382,22 @@ impl Plane {
           '─' => self.rows[i].columns[pos] = '┴',
           '┬' => self.rows[i].columns[pos] = '┼',
           '┐' => self.rows[i].columns[pos] = '┤',
+          '╥' => {
+            if from_left {
+              self.rows[i].columns[pos + 1] = '┴';
+              self.rows[0].columns.insert(pos, '─');
+              for row in self.rows.iter_mut().skip(1).take(i - 1) {
+                row.columns.insert(pos, CH_WS);
+              }
+            } else {
+              self.rows[i].columns[pos - 1] = '┴';
+              self.rows[0].columns.remove(pos - 1);
+              for row in self.rows.iter_mut().skip(1).take(i - 1) {
+                row.columns.remove(pos - 1);
+              }
+              self.move_cursor(0, -1);
+            }
+          }
           _ => {}
         }
       }
@@ -409,10 +429,8 @@ impl Plane {
     }
   }
 
-  /// Counts the number of whitespaces before the nearest vertical line to the right
-  /// from current cursor position. Returns the number of whitespaces and the offset
-  /// to vertical line.
-  fn whitespaces_before_vert_line(&self) -> (usize, usize) {
+  ///
+  fn whitespace_before_vert_line(&self) -> (usize, usize) {
     let mut count = 0;
     let mut offset = 0;
     for ch in &self.rows[self.pos_row].columns[self.pos_col + 1..] {
@@ -430,7 +448,7 @@ impl Plane {
 
   ///
   fn insert_column_before_vert_line_crossing(&mut self) {
-    let (skip, take) = self.rows_skip_take();
+    let (skip, take) = self.rows_skip_and_take();
     for (row_index, row) in self.rows.iter_mut().enumerate().skip(skip).take(take) {
       if row_index != self.pos_row && self.pos_col < row.columns.len() - 1 {
         let mut found_char = CH_WS;
@@ -452,10 +470,10 @@ impl Plane {
     }
   }
 
-  /// Returns `true` if there is a whitespace is before the next
-  /// vertical line to the right from the specified position.
-  fn only_spaces_before_vert_line(&self, pos: usize) -> bool {
-    let (skip, take) = self.rows_skip_take();
+  /// Returns `true` if there is a whitespace is before the next vertical line
+  /// to the right from the specified position in each checked row.
+  fn whitespaces_before_vert_line(&self, pos: usize) -> bool {
+    let (skip, take) = self.rows_skip_and_take();
     for (row_index, row) in self.rows.iter().enumerate().skip(skip).take(take) {
       // check if the current column is not after the end of each row
       if (1..row.columns.len() - 1).contains(&pos) {
@@ -488,7 +506,7 @@ impl Plane {
   /// Deletes a single character before the next vertical line to the right
   /// from the specified position.
   fn delete_character_before_vert_line(&mut self, pos: usize) {
-    let (skip, take) = self.rows_skip_take();
+    let (skip, take) = self.rows_skip_and_take();
     for (row_index, row) in self.rows.iter_mut().enumerate().skip(skip).take(take) {
       if row_index != self.pos_row && pos < row.columns.len() - 1 {
         let mut found_index = 0;
@@ -578,8 +596,8 @@ impl Plane {
   }
 
   ///
-  fn rows_skip_take(&self) -> (usize, usize) {
-    let height = self.information_item_name_height();
+  fn rows_skip_and_take(&self) -> (usize, usize) {
+    let height = self.information_item_height();
     if self.pos_row < height {
       (0, height - 1)
     } else {
@@ -587,13 +605,17 @@ impl Plane {
     }
   }
 
-  /// Returns the height of the information item name.
-  fn information_item_name_height(&self) -> usize {
+  /// Returns the height of the information item.
+  ///
+  //TODO Information item name height does not have to be calculated each time, it may be stored as property an updated when needed - it will be faster
+  fn information_item_height(&self) -> usize {
     for (row_index, row) in self.rows.iter().enumerate() {
-      //TODO may be optimized, search in rows starting with '┌' or '├'
-      for ch in &row.columns {
+      for (col_index, ch) in row.columns.iter().enumerate() {
+        if col_index == 0 && *ch != '┌' && *ch != '├' {
+          break; // skip rows that do not begin with horizontal line crossing
+        }
         if *ch == '╥' {
-          return row_index;
+          return row_index; // index of the row that contains '╥' character is the height
         }
       }
     }
