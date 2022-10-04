@@ -27,5 +27,5 @@ fn _0001() {
   eq_cursor(1, 1, plane);
   plane.move_cursor(3, 0);
   plane.insert_character('A');
-  eq(EXPECTED_0001, plane);
+  eq(plane, EXPECTED_0001);
 }

@@ -138,14 +138,14 @@ impl Editor {
           }
         }
         KN_BACKSPACE => {
-          self.plane.delete_character_before();
+          self.plane.delete_character_before_cursor();
           self.repaint_plane();
           self.update_cursor();
           self.update_cursor_coordinates();
           refresh();
         }
         KN_DELETE => {
-          self.plane.delete_character();
+          self.plane.delete_character_under_cursor();
           self.repaint_plane();
           self.update_cursor();
           self.update_cursor_coordinates();

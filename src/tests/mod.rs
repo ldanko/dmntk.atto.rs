@@ -8,7 +8,7 @@ use crate::Plane;
 use difference::Changeset;
 
 /// Utility function for comparing plane with expected decision table.
-fn eq(decision_table: &str, plane: &Plane) {
+fn eq(plane: &Plane, decision_table: &str) {
   let expected = decision_table.trim();
   let actual = plane.to_string();
   if expected != actual {

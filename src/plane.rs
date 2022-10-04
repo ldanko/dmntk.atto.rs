@@ -148,7 +148,7 @@ impl Plane {
 
   /// Sets a new position of the cursor.
   pub fn move_cursor(&mut self, row_offset: i32, col_offset: i32) {
-    if self.is_allowed(row_offset, col_offset) {
+    if self.is_allowed_position(row_offset, col_offset) {
       let (row, col) = self.adjusted_position(row_offset, col_offset);
       if (1..self.rows.len() - 1).contains(&row) && (1..self.rows[row].columns.len() - 1).contains(&col) {
         self.pos_row = row;
@@ -174,11 +174,11 @@ impl Plane {
 
   /// Moves cursor up.
   pub fn move_up(&mut self) -> bool {
-    if self.is_allowed(-1, 0) {
+    if self.is_allowed_position(-1, 0) {
       self.move_cursor(-1, 0);
       return true;
     }
-    if self.is_horz_line(-1, 0) && self.is_allowed(-2, 0) {
+    if self.is_horz_line(-1, 0) && self.is_allowed_position(-2, 0) {
       self.move_cursor(-2, 0);
       return true;
     }
@@ -187,11 +187,11 @@ impl Plane {
 
   /// Moves cursor down.
   pub fn move_down(&mut self) -> bool {
-    if self.is_allowed(1, 0) {
+    if self.is_allowed_position(1, 0) {
       self.pos_row += 1;
       return true;
     }
-    if self.is_horz_line(1, 0) && self.is_allowed(2, 0) {
+    if self.is_horz_line(1, 0) && self.is_allowed_position(2, 0) {
       self.pos_row += 2;
       return true;
     }
@@ -200,11 +200,11 @@ impl Plane {
 
   /// Moves cursor left.
   pub fn move_left(&mut self) -> bool {
-    if self.is_allowed(0, -1) {
+    if self.is_allowed_position(0, -1) {
       self.pos_col -= 1;
       return true;
     }
-    if self.is_vert_line(0, -1) && self.is_allowed(0, -2) {
+    if self.is_vert_line(0, -1) && self.is_allowed_position(0, -2) {
       self.pos_col -= 2;
       return true;
     }
@@ -213,11 +213,11 @@ impl Plane {
 
   /// Moves cursor right.
   pub fn move_right(&mut self) -> bool {
-    if self.is_allowed(0, 1) {
+    if self.is_allowed_position(0, 1) {
       self.pos_col += 1;
       return true;
     }
-    if self.is_vert_line(0, 1) && self.is_allowed(0, 2) {
+    if self.is_vert_line(0, 1) && self.is_allowed_position(0, 2) {
       self.pos_col += 2;
       return true;
     }
@@ -227,7 +227,7 @@ impl Plane {
   /// Places cursor at the first character in the cell (same row).
   pub fn move_cell_start(&mut self) -> bool {
     if self.is_valid_cursor_pos() {
-      if let Some(offset) = self.get_vertical_line_offset_left() {
+      if let Some(offset) = self.get_vert_line_offset_left() {
         self.move_cursor(0, offset + 1);
         return true;
       }
@@ -238,7 +238,7 @@ impl Plane {
   /// Places cursor at the last character in the cell (same row).
   pub fn move_cell_end(&mut self) -> bool {
     if self.is_valid_cursor_pos() {
-      if let Some(offset) = self.get_vertical_line_offset_right() {
+      if let Some(offset) = self.get_vert_line_offset_right() {
         self.move_cursor(0, offset - 1);
         return true;
       }
@@ -276,8 +276,8 @@ impl Plane {
   /// Places cursor at the first character in the next cell (same row).
   pub fn move_cell_next(&mut self) -> bool {
     if self.is_valid_cursor_pos() {
-      if let Some(offset) = self.get_vertical_line_offset_right() {
-        return if self.is_allowed(0, offset + 1) {
+      if let Some(offset) = self.get_vert_line_offset_right() {
+        return if self.is_allowed_position(0, offset + 1) {
           self.move_cursor(0, offset + 1);
           true
         } else {
@@ -291,8 +291,8 @@ impl Plane {
   /// Places cursor at the last character in the previous cell (same row).
   pub fn move_cell_prev(&mut self) -> bool {
     if self.is_valid_cursor_pos() {
-      if let Some(offset) = self.get_vertical_line_offset_left() {
-        return if self.is_allowed(0, offset - 1) {
+      if let Some(offset) = self.get_vert_line_offset_left() {
+        return if self.is_allowed_position(0, offset - 1) {
           self.move_cursor(0, offset - 1);
           true
         } else {
@@ -306,25 +306,30 @@ impl Plane {
   /// Inserts a character at the current position.
   pub fn insert_character(&mut self, ch: char) {
     if self.is_valid_cursor_pos() {
-      let (whitespace_count, vert_line_offset) = self.vert_whitespace_count();
+      let (count, offset) = self.whitespaces_before_vert_line();
       let columns = &mut self.rows[self.pos_row].columns;
       columns.insert(self.pos_col, ch);
-      if whitespace_count > 1 {
-        columns.remove(self.pos_col + vert_line_offset);
+      if count > 1 {
+        columns.remove(self.pos_col + offset);
       } else {
-        self.vert_insert();
+        self.a();
+        self.insert_column_before_vert_line_crossing();
+        self.b();
       }
       self.move_cursor(0, 1);
     }
   }
 
   /// Deletes a character placed *before* the cursor.
-  pub fn delete_character_before(&mut self) {
-    if self.is_allowed(0, -1) {
+  pub fn delete_character_before_cursor(&mut self) {
+    if self.is_allowed_position(0, -1) {
       self.rows[self.pos_row].columns.remove(self.pos_col - 1);
       self.move_cursor(0, -1);
-      if self.spaces_before_vertical_line(self.last_position_before_vert_line()) {
-        self.vert_delete();
+      let pos = self.last_position_before_vert_line();
+      if self.only_spaces_before_vert_line(pos) {
+        self.a();
+        self.delete_character_before_vert_line(pos);
+        self.b();
       } else {
         self.insert_whitespace_before_vert_line();
       }
@@ -332,15 +337,50 @@ impl Plane {
   }
 
   /// Deletes a character placed *under* the cursor.
-  pub fn delete_character(&mut self) {
-    if self.spaces_before_vertical_line(self.last_position_before_vert_line()) {
-      self.vert_delete();
+  pub fn delete_character_under_cursor(&mut self) {
+    let pos = self.last_position_before_vert_line();
+    if self.only_spaces_before_vert_line(pos) {
+      self.a();
+      self.delete_character_before_vert_line(pos);
+      self.b();
     } else {
       self.insert_whitespace_before_vert_line();
     }
     self.rows[self.pos_row].columns.remove(self.pos_col);
     if is_box_drawing_character!(self.cur_char()) {
       self.move_cursor(0, -1);
+    }
+  }
+
+  /// Update connection with information item name cell.
+  fn a(&mut self) {
+    let i = self.information_item_name_height();
+    if i > 0 {
+      let pos = self.rows[0].columns.len() - 1;
+      if pos < self.rows[i].columns.len() {
+        match self.rows[i].columns[pos] {
+          '┴' => self.rows[i].columns[pos] = '─',
+          '┼' => self.rows[i].columns[pos] = '┬',
+          '┤' => self.rows[i].columns[pos] = '┐',
+          _ => {}
+        }
+      }
+    }
+  }
+
+  /// Update connection with information item name cell.
+  fn b(&mut self) {
+    let i = self.information_item_name_height();
+    if i > 0 {
+      let pos = self.rows[0].columns.len() - 1;
+      if pos < self.rows[i].columns.len() {
+        match self.rows[i].columns[pos] {
+          '─' => self.rows[i].columns[pos] = '┴',
+          '┬' => self.rows[i].columns[pos] = '┼',
+          '┐' => self.rows[i].columns[pos] = '┤',
+          _ => {}
+        }
+      }
     }
   }
 
@@ -369,44 +409,41 @@ impl Plane {
     }
   }
 
-  /// Counts the number of whitespaces before the next vertical line to the right from current cursor position.
-  /// Returns the number of whitespaces and the offset to the vertical line.
-  fn vert_whitespace_count(&self) -> (usize, usize) {
-    let mut whitespace_count = 0;
-    let mut vert_line_offset = 0;
-    if self.is_valid_cursor_pos() {
-      for ch in &self.rows[self.pos_row].columns[self.pos_col + 1..] {
-        if is_vertical_line_left!(ch) {
-          break;
-        } else if *ch == CH_WS {
-          whitespace_count += 1;
-        } else {
-          whitespace_count = 0;
-        }
-        vert_line_offset += 1;
+  /// Counts the number of whitespaces before the nearest vertical line to the right
+  /// from current cursor position. Returns the number of whitespaces and the offset
+  /// to vertical line.
+  fn whitespaces_before_vert_line(&self) -> (usize, usize) {
+    let mut count = 0;
+    let mut offset = 0;
+    for ch in &self.rows[self.pos_row].columns[self.pos_col + 1..] {
+      if is_vertical_line_left!(ch) {
+        break;
+      } else if *ch == CH_WS {
+        count += 1;
+      } else {
+        count = 0;
       }
+      offset += 1;
     }
-    (whitespace_count, vert_line_offset)
+    (count, offset)
   }
 
   ///
-  fn vert_insert(&mut self) {
-    for (row_index, row) in self.rows.iter_mut().enumerate() {
+  fn insert_column_before_vert_line_crossing(&mut self) {
+    let (skip, take) = self.rows_skip_take();
+    for (row_index, row) in self.rows.iter_mut().enumerate().skip(skip).take(take) {
       if row_index != self.pos_row && self.pos_col < row.columns.len() - 1 {
-        let mut found_char = ' ';
+        let mut found_char = CH_WS;
         let mut found_index = 0;
         for (col_index, ch) in row.columns[self.pos_col..].iter().enumerate() {
-          if matches!(
-            ch,
-            '│' | '┼' | '┬' | '┴' | '╪' | '┐' | '┘' | '├' | '║' | '╟' | '╬' | '╥' | '╨' | '╫' | '╢' | '┤' | '╡'
-          ) {
+          if is_vertical_line_crossing!(ch) {
             found_char = *ch;
             found_index = self.pos_col + col_index;
             break;
           }
         }
         match found_char {
-          '│' | '├' | '║' | '╟' => row.columns.insert(found_index, ' '),
+          '│' | '├' | '║' | '╟' => row.columns.insert(found_index, CH_WS),
           '┼' | '┬' | '┴' | '┐' | '┘' | '┤' | '╥' | '╨' | '╫' | '╢' => row.columns.insert(found_index, '─'),
           '╪' | '╬' | '╡' => row.columns.insert(found_index, '═'),
           _ => {}
@@ -417,11 +454,9 @@ impl Plane {
 
   /// Returns `true` if there is a whitespace is before the next
   /// vertical line to the right from the specified position.
-  /// All rows are checked, except those, for which the character
-  /// at specified position is a box-drawing character.
-  fn spaces_before_vertical_line(&self, pos: usize) -> bool {
-    // iterate over all rows in plane
-    for (row_index, row) in self.rows.iter().enumerate() {
+  fn only_spaces_before_vert_line(&self, pos: usize) -> bool {
+    let (skip, take) = self.rows_skip_take();
+    for (row_index, row) in self.rows.iter().enumerate().skip(skip).take(take) {
       // check if the current column is not after the end of each row
       if (1..row.columns.len() - 1).contains(&pos) {
         // check the character at column position, if box-drawing then skip
@@ -450,14 +485,16 @@ impl Plane {
     true
   }
 
-  /// Deletes a single character before the next vertical line
-  fn vert_delete(&mut self) {
-    for (row_index, row) in self.rows.iter_mut().enumerate() {
-      if row_index != self.pos_row && self.pos_col < row.columns.len() - 1 {
+  /// Deletes a single character before the next vertical line to the right
+  /// from the specified position.
+  fn delete_character_before_vert_line(&mut self, pos: usize) {
+    let (skip, take) = self.rows_skip_take();
+    for (row_index, row) in self.rows.iter_mut().enumerate().skip(skip).take(take) {
+      if row_index != self.pos_row && pos < row.columns.len() - 1 {
         let mut found_index = 0;
-        for (col_index, ch) in row.columns[self.pos_col..].iter().enumerate() {
+        for (col_index, ch) in row.columns[pos..].iter().enumerate() {
           if is_vertical_line_crossing!(ch) {
-            found_index = self.pos_col + col_index;
+            found_index = pos + col_index;
             break;
           }
         }
@@ -489,7 +526,7 @@ impl Plane {
   }
 
   /// Returns `true` when the cursor position is allowed according to horizontal and vertical offset.
-  fn is_allowed(&self, row_offset: i32, col_offset: i32) -> bool {
+  fn is_allowed_position(&self, row_offset: i32, col_offset: i32) -> bool {
     let (r, c) = self.adjusted_position(row_offset, col_offset);
     if r > 0 && r < self.rows.len() - 1 && c > 0 && c < self.rows[r].columns.len() - 1 {
       !is_box_drawing_character!(self.rows[r].columns[c])
@@ -515,7 +552,7 @@ impl Plane {
   }
 
   /// Returns the offset of the vertical line to the right from current cursor position.
-  fn get_vertical_line_offset_right(&self) -> Option<i32> {
+  fn get_vert_line_offset_right(&self) -> Option<i32> {
     if self.is_valid_cursor_pos() {
       for (index, ch) in self.rows[self.pos_row].columns[self.pos_col..].iter().enumerate() {
         if is_vertical_line_left!(ch) {
@@ -529,7 +566,7 @@ impl Plane {
   }
 
   /// Returns the offset of the vertical line to the left from current cursor position.
-  fn get_vertical_line_offset_left(&self) -> Option<i32> {
+  fn get_vert_line_offset_left(&self) -> Option<i32> {
     if self.is_valid_cursor_pos() {
       for (offset, ch) in self.rows[self.pos_row].columns[0..=self.pos_col].iter().rev().enumerate() {
         if is_vertical_line_right!(ch) {
@@ -538,5 +575,28 @@ impl Plane {
       }
     }
     None
+  }
+
+  ///
+  fn rows_skip_take(&self) -> (usize, usize) {
+    let height = self.information_item_name_height();
+    if self.pos_row < height {
+      (0, height - 1)
+    } else {
+      (height, self.rows.len() - height)
+    }
+  }
+
+  /// Returns the height of the information item name.
+  fn information_item_name_height(&self) -> usize {
+    for (row_index, row) in self.rows.iter().enumerate() {
+      //TODO may be optimized, search in rows starting with '┌' or '├'
+      for ch in &row.columns {
+        if *ch == '╥' {
+          return row_index;
+        }
+      }
+    }
+    0
   }
 }
