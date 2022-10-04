@@ -7,7 +7,7 @@ fn _0001() {
   eq_cursor(1, 1, plane);
   repeat!(2, plane, cursor_move_down);
   repeat!(2, plane, cursor_move_right);
-  repeat!(1, plane, delete_character_before_cursor);
+  repeat!(1, plane, delete_char_before);
   let expected = r#"
 ┌─────────────────────────────────────┐
 │ Order options                       │
@@ -36,7 +36,7 @@ fn _0002() {
   eq_cursor(1, 1, plane);
   repeat!(2, plane, cursor_move_down);
   repeat!(12, plane, cursor_move_right);
-  repeat!(1, plane, delete_character_before_cursor);
+  repeat!(1, plane, delete_char_before);
   let expected = r#"
 ┌─────────────────────────────────────┐
 │ Order options                       │
@@ -65,7 +65,7 @@ fn _0003() {
   eq_cursor(1, 1, plane);
   repeat!(5, plane, cursor_move_down);
   repeat!(13, plane, cursor_move_right);
-  repeat!(3, plane, delete_character_before_cursor);
+  repeat!(3, plane, delete_char_before);
   let expected = r#"
 ┌─────────────────────────────────────┐
 │ Order options                       │
@@ -94,7 +94,7 @@ fn _0004() {
   eq_cursor(1, 1, plane);
   repeat!(2, plane, cursor_move_down);
   repeat!(8, plane, cursor_move_right);
-  repeat!(4, plane, delete_character_under_cursor);
+  repeat!(4, plane, delete_char);
   let expected = r#"
 ┌─────────────────────────────────────┐
 │ Order options                       │
@@ -123,7 +123,7 @@ fn _0005() {
   eq_cursor(1, 1, plane);
   repeat!(5, plane, cursor_move_down);
   repeat!(13, plane, cursor_move_right);
-  repeat!(2, plane, delete_character_under_cursor);
+  repeat!(2, plane, delete_char);
   eq_cursor(7, 14, plane);
   let expected = r#"
 ┌─────────────────────────────────────┐
@@ -153,19 +153,19 @@ fn _0006() {
   eq_cursor(1, 1, plane);
   repeat!(2, plane, cursor_move_down);
   repeat!(3, plane, cursor_move_right);
-  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(15, plane, delete_char);
   repeat!(1, plane, cursor_move_down);
-  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(15, plane, delete_char);
   repeat!(1, plane, cursor_move_down);
-  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(15, plane, delete_char);
   repeat!(1, plane, cursor_move_down);
-  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(15, plane, delete_char);
   repeat!(2, plane, cursor_move_down);
-  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(15, plane, delete_char);
   repeat!(1, plane, cursor_move_down);
-  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(15, plane, delete_char);
   repeat!(1, plane, cursor_move_down);
-  repeat!(15, plane, delete_character_under_cursor);
+  repeat!(15, plane, delete_char);
   eq_cursor(15, 5, plane);
   let expected = r#"
 ┌──────────────────────────────────────┐
@@ -195,7 +195,7 @@ fn _0007() {
   eq_cursor(1, 1, plane);
   repeat!(5, plane, cursor_move_down);
   repeat!(40, plane, cursor_move_right);
-  repeat!(1, plane, delete_character_under_cursor);
+  repeat!(1, plane, delete_char);
   eq_cursor(7, 44, plane);
   let expected = r#"
 ┌─────────────────────────────────────┐
@@ -227,7 +227,7 @@ fn _0008() {
   repeat!(42, plane, cursor_move_right);
   repeat!(1, plane, cursor_move_down);
   eq_cursor(4, 47, plane);
-  repeat!(1, plane, delete_character_before_cursor);
+  repeat!(1, plane, delete_char_before);
   eq_cursor(4, 47, plane);
   let expected = r#"
 ┌─────────────────────────────────────┐

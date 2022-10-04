@@ -139,14 +139,14 @@ impl Editor {
           }
         }
         KN_BACKSPACE => {
-          self.plane.delete_character_before_cursor();
+          self.plane.delete_char_before();
           self.repaint_plane();
           self.update_cursor();
           self.update_cursor_coordinates();
           refresh();
         }
         KN_DELETE => {
-          self.plane.delete_character_under_cursor();
+          self.plane.delete_char();
           self.repaint_plane();
           self.update_cursor();
           self.update_cursor_coordinates();
@@ -205,7 +205,7 @@ impl Editor {
         _ => match key {
           32..=126 => {
             let ch = char::from_u32(key as u32).unwrap();
-            self.plane.insert_character(ch);
+            self.plane.insert_char(ch);
             self.repaint_plane();
             self.update_cursor();
             self.update_cursor_coordinates();

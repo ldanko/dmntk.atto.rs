@@ -282,7 +282,7 @@ impl Plane {
   }
 
   /// Inserts a character at the current position.
-  pub fn insert_character(&mut self, ch: char) {
+  pub fn insert_char(&mut self, ch: char) {
     if self.is_valid_cursor_pos() {
       let (count, offset) = self.whitespace_before_vert_line();
       let columns = &mut self.rows[self.row].columns;
@@ -299,7 +299,7 @@ impl Plane {
   }
 
   /// Deletes a character placed *before* the cursor.
-  pub fn delete_character_before_cursor(&mut self) {
+  pub fn delete_char_before(&mut self) {
     if self.is_allowed_position(0, -1) {
       self.rows[self.row].columns.remove(self.col - 1);
       self.cursor_move(0, -1);
@@ -315,7 +315,7 @@ impl Plane {
   }
 
   /// Deletes a character placed *under* the cursor.
-  pub fn delete_character_under_cursor(&mut self) {
+  pub fn delete_char(&mut self) {
     let pos = self.last_position_before_vert_line();
     if self.whitespaces_before_vert_line(pos) {
       self.a();
