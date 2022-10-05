@@ -77,6 +77,11 @@ macro_rules! is_vertical_line_crossing {
   };
 }
 
+enum Op {
+  Insert,
+  Delete,
+}
+
 /// Row of characters in columns.
 pub struct Row {
   /// Characters in a row.
@@ -292,47 +297,46 @@ impl Plane {
   /// Inserts a character at the current position.
   pub fn insert_char(&mut self, ch: char) {
     if self.is_valid_cursor_pos() {
-      let (count, offset) = self.whitespace_before_vert_line();
+      let pos = self.last_position_before_vert_line();
+      let (found, offset) = self.is_whitespace_before_vert_line();
       let columns = &mut self.rows[self.row].columns;
       columns.insert(self.col, ch);
-      if count > 0 {
+      if found {
         columns.remove(self.col + offset + 1);
       } else {
-        self.insert_column_before_vert_line_crossing();
-        self.update_join_character(self.row < self.iih);
+        self.insert_column_before_vert_line(pos);
       }
       self.cursor_move(0, 1);
+      self.update_joins();
     }
   }
 
   /// Deletes a character placed *before* the cursor.
   pub fn delete_char_before(&mut self) {
     if self.is_allowed_position(0, -1) {
-      self.rows[self.row].columns.remove(self.col - 1);
-      self.cursor_move(0, -1);
       let pos = self.last_position_before_vert_line();
-      if self.whitespaces_before_vert_line(pos) {
-        self.delete_character_before_vert_line(pos);
-        self.update_join_character(self.row > self.iih);
-      } else {
-        self.insert_whitespace_before_vert_line();
+      self.rows[self.row].columns.insert(pos + 1, CH_WS);
+      self.rows[self.row].columns.remove(self.col - 1);
+      if self.is_whitespace_column_before_vert_line(pos, Op::Delete) {
+        self.delete_column_before_vert_line(pos);
       }
+      self.cursor_move(0, -1);
+      self.update_joins();
     }
   }
 
   /// Deletes a character placed *under* the cursor.
   pub fn delete_char(&mut self) {
     let pos = self.last_position_before_vert_line();
-    if self.whitespaces_before_vert_line(pos) {
-      self.delete_character_before_vert_line(pos);
-      self.update_join_character(self.row > self.iih);
-    } else {
-      self.insert_whitespace_before_vert_line();
-    }
+    self.rows[self.row].columns.insert(pos + 1, CH_WS);
     self.rows[self.row].columns.remove(self.col);
+    if self.is_whitespace_column_before_vert_line(pos, Op::Delete) {
+      self.delete_column_before_vert_line(pos);
+    }
     if is_box_drawing_character!(self.rows[self.row].columns[self.col]) {
       self.cursor_move(0, -1);
     }
+    self.update_joins();
   }
 
   /// Moves the cursor to new position.
@@ -347,10 +351,10 @@ impl Plane {
   }
 
   /// Updated join character between information item name cell and the body of the decision table.
-  fn update_join_character(&mut self, from_left: bool) {
-    if self.iih > 0 && self.iih + 1 < self.rows.len() {
+  fn update_joins(&mut self) {
+    if self.iih > 0 {
       let row_index = self.iih;
-      // replace all joining characters between the information item name and body to `un-joined` equivalent
+      // remove old joining character...
       for ch in &mut self.rows[row_index].columns {
         match ch {
           '┴' => *ch = '─',
@@ -359,72 +363,17 @@ impl Plane {
           _ => {}
         }
       }
-      // if the joining row is longer then the decision table body (information item name is longer),
-      // then delete all characters that extend the next row and...
-      while self.rows[row_index].columns.len() > self.rows[row_index + 1].columns.len() {
-        self.rows[row_index].columns.pop();
-      }
-      // ...replace the last character with '┐'
-      if let Some(ch) = self.rows[row_index].columns.last_mut() {
-        *ch = '┐';
-      }
-      // update joins
+      // ...and replace with new joining character
       let col_index = self.rows[0].columns.len() - 1;
       if col_index < self.rows[row_index].columns.len() {
-        match self.rows[row_index].columns[col_index] {
-          '─' => self.rows[row_index].columns[col_index] = '┴',
-          '┬' => self.rows[row_index].columns[col_index] = '┼',
-          '┐' => self.rows[row_index].columns[col_index] = '┤',
-          '╥' => {
-            if from_left {
-              // approaching '╥' from left
-              // insert additional space before vertical line,
-              // it looks like jumping over the '╥' character from left to right
-              self.rows[row_index].columns[col_index + 1] = '┴';
-              self.rows[0].columns.insert(col_index, '─');
-              for row in self.rows.iter_mut().skip(1).take(row_index - 1) {
-                row.columns.insert(col_index, CH_WS);
-              }
-            } else {
-              // approaching '╥' from right
-              // check if there is a whitespace before closing vertical line in each row
-              if self.rows.iter().skip(1).take(row_index - 1).all(|row| row.columns[col_index - 1] == CH_WS) {
-                // if there is a whitespace before closing vertical line then delete it,
-                // it looks like jumping over the '╥' character from right to left
-                self.rows[row_index].columns[col_index - 1] = '┴';
-                self.rows[0].columns.remove(col_index - 1);
-                for row in self.rows.iter_mut().skip(1).take(row_index - 1) {
-                  row.columns.remove(col_index - 1);
-                }
-                if col_index == self.col {
-                  self.cursor_move(0, -1);
-                }
-              } else {
-                // if there is no whitespace before closing vertical line then add one,
-                // it looks like holding the vertical line before the '╥' character
-                self.rows[row_index].columns[col_index + 1] = '┴';
-                self.rows[0].columns.insert(col_index, '─');
-                for row in self.rows.iter_mut().skip(1).take(row_index - 1) {
-                  row.columns.insert(col_index, CH_WS);
-                }
-              }
-            }
-          }
+        let ch = &mut self.rows[row_index].columns[col_index];
+        match ch {
+          '─' => *ch = '┴',
+          '┬' => *ch = '┼',
+          '┐' => *ch = '┤',
           _ => {}
         }
       }
-      // extend joining line after the right side of the decision table body
-      // if row_index + 1 < self.rows.len() {
-      //   let i = self.rows[0].columns.len();
-      //   let j = self.rows[row_index + 1].columns.len();
-      //   if i > j {
-      //     self.rows[row_index + 1].columns[j - 1] = '┬';
-      //     for _ in j + 1..i {
-      //       self.rows[row_index].columns.push('─');
-      //     }
-      //     self.rows[row_index].columns.push('┘');
-      //   }
-      // }
     }
   }
 
@@ -438,23 +387,8 @@ impl Plane {
     self.col
   }
 
-  /// Inserts whitespace character before the next vertical line to the right from the cursor.
-  fn insert_whitespace_before_vert_line(&mut self) {
-    if (1..self.rows.len()).contains(&self.row) {
-      let row = &mut self.rows[self.row];
-      if (1..row.columns.len() - 1).contains(&self.col) {
-        for (col_index, ch) in row.columns[self.col..].iter().enumerate() {
-          if is_vertical_line_left!(ch) {
-            row.columns.insert(self.col + col_index, CH_WS);
-            break;
-          }
-        }
-      }
-    }
-  }
-
   ///
-  fn whitespace_before_vert_line(&self) -> (usize, usize) {
+  fn is_whitespace_before_vert_line(&self) -> (bool, usize) {
     let mut count = 0;
     let mut offset = 0;
     for ch in &self.rows[self.row].columns[self.col + 1..] {
@@ -467,20 +401,20 @@ impl Plane {
       }
       offset += 1;
     }
-    (count, offset)
+    (count > 0, offset)
   }
 
   ///
-  fn insert_column_before_vert_line_crossing(&mut self) {
-    let (skip, take) = self.rows_skip_and_take();
+  fn insert_column_before_vert_line(&mut self, pos: usize) {
+    let (skip, take) = self.rows_skip_and_take(Op::Insert);
     for (row_index, row) in self.rows.iter_mut().enumerate().skip(skip).take(take) {
-      if row_index != self.row && self.col < row.columns.len() - 1 {
+      if row_index != self.row && pos < row.columns.len() - 1 {
         let mut found_char = CH_WS;
         let mut found_index = 0;
-        for (col_index, ch) in row.columns[self.col..].iter().enumerate() {
+        for (col_index, ch) in row.columns[pos..].iter().enumerate() {
           if is_vertical_line_crossing!(ch) {
             found_char = *ch;
-            found_index = self.col + col_index;
+            found_index = pos + col_index;
             break;
           }
         }
@@ -496,8 +430,8 @@ impl Plane {
 
   /// Returns `true` if there is a whitespace is before the next vertical line
   /// to the right from the specified position in each checked row.
-  fn whitespaces_before_vert_line(&self, pos: usize) -> bool {
-    let (skip, take) = self.rows_skip_and_take();
+  fn is_whitespace_column_before_vert_line(&self, pos: usize, op: Op) -> bool {
+    let (skip, take) = self.rows_skip_and_take(op);
     for (row_index, row) in self.rows.iter().enumerate().skip(skip).take(take) {
       // check if the current column is not after the end of each row
       if (1..row.columns.len() - 1).contains(&pos) {
@@ -529,10 +463,10 @@ impl Plane {
 
   /// Deletes a single character before the next vertical line to the right
   /// from the specified position.
-  fn delete_character_before_vert_line(&mut self, pos: usize) {
-    let (skip, take) = self.rows_skip_and_take();
-    for (row_index, row) in self.rows.iter_mut().enumerate().skip(skip).take(take) {
-      if row_index != self.row && pos < row.columns.len() - 1 {
+  fn delete_column_before_vert_line(&mut self, pos: usize) {
+    let (skip, take) = self.rows_skip_and_take(Op::Delete);
+    for row in self.rows.iter_mut().skip(skip).take(take) {
+      if pos < row.columns.len() - 1 {
         let mut found_index = 0;
         for (col_index, ch) in row.columns[pos..].iter().enumerate() {
           if is_vertical_line_crossing!(ch) {
@@ -619,12 +553,43 @@ impl Plane {
     None
   }
 
-  ///
-  fn rows_skip_and_take(&self) -> (usize, usize) {
+  /// Returns the number of rows to skip and to take while iterating over rows.
+  fn rows_skip_and_take(&self, op: Op) -> (usize, usize) {
     if self.row < self.iih {
-      (0, self.iih - 1)
+      // operation takes place in information item cell
+      match op {
+        Op::Insert => {
+          //
+          let pos = self.last_position_before_vert_line();
+          if pos + 1 >= self.rows[self.iih].columns.len() {
+            (0, self.rows.len())
+          } else {
+            (0, self.iih)
+          }
+        }
+        Op::Delete => {
+          //
+          (0, self.iih)
+        }
+      }
     } else {
-      (self.iih, self.rows.len() - self.iih)
+      // operation takes place in decision table body
+      match op {
+        Op::Insert => {
+          //
+          (self.iih, self.rows.len() - self.iih)
+        }
+        Op::Delete => {
+          //
+          let l_first = self.rows[0].columns.len();
+          let l_current = self.rows[self.row].columns.len();
+          if l_current > l_first {
+            (self.iih, self.rows.len() - self.iih)
+          } else {
+            (0, self.rows.len())
+          }
+        }
+      }
     }
   }
 }
