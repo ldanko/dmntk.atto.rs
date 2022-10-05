@@ -47,6 +47,28 @@ use ncurses::*;
 use plane::*;
 use std::{env, fs};
 
+///
+enum Action {
+  CursorMoveCellStart,
+  CursorMoveCellEnd,
+  CursorMoveCellLeft,
+  CursorMoveCellRight,
+  CursorMoveDown,
+  CursorMoveLeft,
+  CursorMoveRight,
+  CursorMoveTableStart,
+  CursorMoveTableEnd,
+  CursorMoveUp,
+  DebugKeystroke(i32, String),
+  DeleteChar,
+  DeleteCharBefore,
+  DoNothing,
+  InsertChar(char),
+  ResizeWindow,
+  Quit,
+}
+
+///
 struct Editor {
   /// Handle of the main window of the terminal.
   window: WINDOW,
@@ -61,6 +83,7 @@ impl Editor {
     let window = Self::initialize();
     Ok(Self { window, plane })
   }
+
   /// Initializes terminal via ncurses.
   fn initialize() -> WINDOW {
     let locale_conf = LcCategory::all;
@@ -71,15 +94,18 @@ impl Editor {
     noecho();
     window
   }
+
   /// Terminates terminal via ncurses.
   fn finalize(&self) -> Result<()> {
     endwin();
     Ok(())
   }
+
   /// Updates cursor position.
   fn update_cursor(&self) {
     mv(self.plane.cursor_row() as i32, self.plane.cursor_col() as i32);
   }
+
   /// Updates cursor coordinates in status bar.
   fn update_cursor_coordinates(&self) {
     let mut cur_x = 0;
@@ -95,6 +121,7 @@ impl Editor {
     );
     mv(cur_y, cur_x);
   }
+
   /// Repaints the content of a plane.
   fn repaint_plane(&self) {
     for (r, row) in self.plane.rows().iter().enumerate() {
@@ -103,97 +130,143 @@ impl Editor {
       addstr("  ");
     }
   }
-  /// Processes input keystrokes.
+
+  /// Maps a key-stroke to editor action.
+  fn map_key_to_action(&self, key: i32) -> Action {
+    if let Some(key_name) = keyname(key) {
+      match key_name.as_str() {
+        KN_CTRL_Q => Action::Quit,
+        KN_UP => Action::CursorMoveUp,
+        KN_DOWN => Action::CursorMoveDown,
+        KN_LEFT => Action::CursorMoveLeft,
+        KN_RIGHT => Action::CursorMoveRight,
+        KN_BACKSPACE => Action::DeleteCharBefore,
+        KN_DELETE => Action::DeleteChar,
+        KN_HOME => Action::CursorMoveCellStart,
+        KN_END => Action::CursorMoveCellEnd,
+        KN_SHIFT_HOME => Action::CursorMoveTableStart,
+        KN_SHIFT_END => Action::CursorMoveTableEnd,
+        KN_TAB => Action::CursorMoveCellRight,
+        KN_SHIFT_TAB => Action::CursorMoveCellLeft,
+        KN_RESIZE => Action::ResizeWindow,
+        _ => match key {
+          32..=126 => Action::InsertChar(char::from_u32(key as u32).unwrap()),
+          127 => Action::DeleteChar,
+          _ => Action::DebugKeystroke(key, key_name),
+        },
+      }
+    } else {
+      Action::DoNothing
+    }
+  }
+
+  /// Processes input key-strokes.
   fn process_keystrokes(&mut self) {
     loop {
-      let key = getch();
-      let key_name = keyname(key).unwrap_or_default();
-      match key_name.as_str() {
-        KN_CTRL_Q => break,
-        KN_UP => {
-          if self.plane.cursor_move_up() {
-            self.update_cursor();
-            self.update_cursor_coordinates();
-            refresh();
-          }
-        }
-        KN_DOWN => {
-          if self.plane.cursor_move_down() {
-            self.update_cursor();
-            self.update_cursor_coordinates();
-            refresh();
-          }
-        }
-        KN_LEFT => {
-          if self.plane.cursor_move_left() {
-            self.update_cursor();
-            self.update_cursor_coordinates();
-            refresh();
-          }
-        }
-        KN_RIGHT => {
-          if self.plane.cursor_move_right() {
-            self.update_cursor();
-            self.update_cursor_coordinates();
-            refresh();
-          }
-        }
-        KN_BACKSPACE => {
-          self.plane.delete_char_before();
-          self.repaint_plane();
-          self.update_cursor();
-          self.update_cursor_coordinates();
-          refresh();
-        }
-        KN_DELETE => {
-          self.plane.delete_char();
-          self.repaint_plane();
-          self.update_cursor();
-          self.update_cursor_coordinates();
-        }
-        KN_HOME => {
+      match self.map_key_to_action(getch()) {
+        Action::CursorMoveCellStart => {
           if self.plane.cursor_move_cell_start() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        KN_END => {
+        Action::CursorMoveCellEnd => {
           if self.plane.cursor_move_cell_end() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        KN_SHIFT_HOME => {
-          if self.plane.cursor_move_table_start() {
-            self.update_cursor();
-            self.update_cursor_coordinates();
-            refresh();
-          }
-        }
-        KN_SHIFT_END => {
-          if self.plane.cursor_move_table_end() {
-            self.update_cursor();
-            self.update_cursor_coordinates();
-            refresh();
-          }
-        }
-        KN_TAB => {
-          if self.plane.cursor_move_cell_right() {
-            self.update_cursor();
-            self.update_cursor_coordinates();
-            refresh();
-          }
-        }
-        KN_SHIFT_TAB => {
+        Action::CursorMoveCellLeft => {
           if self.plane.cursor_move_cell_left() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        KN_RESIZE => {
+        Action::CursorMoveCellRight => {
+          if self.plane.cursor_move_cell_right() {
+            self.update_cursor();
+            self.update_cursor_coordinates();
+            refresh();
+          }
+        }
+        Action::CursorMoveDown => {
+          if self.plane.cursor_move_down() {
+            self.update_cursor();
+            self.update_cursor_coordinates();
+            refresh();
+          }
+        }
+        Action::CursorMoveLeft => {
+          if self.plane.cursor_move_left() {
+            self.update_cursor();
+            self.update_cursor_coordinates();
+            refresh();
+          }
+        }
+        Action::CursorMoveRight => {
+          if self.plane.cursor_move_right() {
+            self.update_cursor();
+            self.update_cursor_coordinates();
+            refresh();
+          }
+        }
+        Action::CursorMoveTableStart => {
+          if self.plane.cursor_move_table_start() {
+            self.update_cursor();
+            self.update_cursor_coordinates();
+            refresh();
+          }
+        }
+        Action::CursorMoveTableEnd => {
+          if self.plane.cursor_move_table_end() {
+            self.update_cursor();
+            self.update_cursor_coordinates();
+            refresh();
+          }
+        }
+        Action::CursorMoveUp => {
+          if self.plane.cursor_move_up() {
+            self.update_cursor();
+            self.update_cursor_coordinates();
+            refresh();
+          }
+        }
+        Action::DebugKeystroke(key, key_name) => {
+          let mut x = 0;
+          let mut y = 0;
+          let mut mx = 0;
+          let mut my = 0;
+          getyx(self.window, &mut y, &mut x);
+          getmaxyx(self.window, &mut my, &mut mx);
+          mvaddstr(my - 1, 30, &format!("{} | {:40}", key, key_name));
+          mv(y, x);
+          refresh();
+        }
+        Action::DeleteChar => {
+          self.plane.delete_char();
+          self.repaint_plane();
+          self.update_cursor();
+          self.update_cursor_coordinates();
+        }
+        Action::DeleteCharBefore => {
+          self.plane.delete_char_before();
+          self.repaint_plane();
+          self.update_cursor();
+          self.update_cursor_coordinates();
+          refresh();
+        }
+        Action::DoNothing => {}
+        Action::InsertChar(ch) => {
+          self.plane.insert_char(ch);
+          self.repaint_plane();
+          self.update_cursor();
+          self.update_cursor_coordinates();
+          refresh();
+        }
+        Action::ResizeWindow => {
           // getmaxyx(self.window, &mut max_y, &mut max_x);
           // getyx(window, &mut cur_y, &mut cur_x);
           // attron(A_REVERSE());
@@ -202,27 +275,7 @@ impl Editor {
           // mv(cur_y, cur_x);
           // refresh();
         }
-        _ => match key {
-          32..=126 => {
-            let ch = char::from_u32(key as u32).unwrap();
-            self.plane.insert_char(ch);
-            self.repaint_plane();
-            self.update_cursor();
-            self.update_cursor_coordinates();
-            refresh();
-          }
-          _ => {
-            let mut x = 0;
-            let mut y = 0;
-            let mut mx = 0;
-            let mut my = 0;
-            getyx(self.window, &mut y, &mut x);
-            getmaxyx(self.window, &mut my, &mut mx);
-            mvaddstr(my - 1, 30, &format!("{} | {:40}", key, key_name));
-            mv(y, x);
-            refresh();
-          }
-        },
+        Action::Quit => break,
       }
     }
   }

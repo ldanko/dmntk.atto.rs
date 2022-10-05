@@ -8,6 +8,9 @@ repository = "https://github.com/dmntk/dmntk.atto.git"
 license = "MIT OR Apache-2.0"
 edition = "2021"
 
+[[bin]]
+name = "atto"
+path = "src/main.rs"
 
 [dependencies]
 ncurses = { version = "5.101.0", features = ["wide", "extended_colors"] }
