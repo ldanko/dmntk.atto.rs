@@ -233,6 +233,8 @@ fn usage() {
   println!("usage")
 }
 
+/// Temporary debug function.
+//TODO remove
 pub fn debug(msg: &str) {
   let mut x = 0;
   let mut y = 0;
@@ -244,8 +246,6 @@ pub fn debug(msg: &str) {
   mv(y, x);
   refresh();
 }
-
-//pub(crate) use debug;
 
 /// Main entrypoint.
 fn main() -> Result<()> {
