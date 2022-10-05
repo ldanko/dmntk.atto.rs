@@ -250,3 +250,34 @@ fn _0008() {
 "#;
   eq(plane, expected);
 }
+
+/// (description)
+#[test]
+fn _0009() {
+  let plane = &mut Plane::new(TEST_INPUT_001);
+  eq_cursor(1, 1, plane);
+  repeat!(1, plane, cursor_move_cell_end);
+  repeat!(13, plane, delete_char);
+  plane.delete_char();
+  eq_cursor(1, 22, plane);
+  let expected = r#"
+┌──────────────────────┐
+│ Order options        │
+├───┬───────────┬──────┴╥─────────────────────╥─────────────┬───────────┐
+│ U │           │       ║    Order options    ║             │           │
+│   │ Customer  │ Order ╟──────────┬──────────╢ Description │ Reference │
+│   │   type    │ size  ║ Discount │ Priority ║             │           │
+│   ├───────────┼───────╫──────────┼──────────╫─────────────┼───────────┤
+│   │"Business",│  <10, ║   0.10,  │"Normal", ║             │           │
+│   │"Private"  │ >=10  ║   0.15,  │ "High",  ║             │           │
+│   │           │       ║   0.05   │ "Low"    ║             │           │
+╞═══╪═══════════╪═══════╬══════════╪══════════╬═════════════╪═══════════╡
+│ 1 │"Business" │  <10  ║   0.10   │ "Normal" ║ Small order │   Ref 1   │
+├───┼───────────┼───────╫──────────┼──────────╫─────────────┼───────────┤
+│ 2 │"Business" │ >=10  ║   0.15   │ "High"   ║ Large order │   Ref 2   │
+├───┼───────────┼───────╫──────────┼──────────╫─────────────┼───────────┤
+│ 3 │"Private"  │   -   ║   0.05   │ "Low"    ║ All orders  │   Ref 3   │
+└───┴───────────┴───────╨──────────┴──────────╨─────────────┴───────────┘
+"#;
+  eq(plane, expected);
+}

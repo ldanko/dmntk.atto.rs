@@ -396,6 +396,9 @@ impl Plane {
                 for row in self.rows.iter_mut().skip(1).take(row_index - 1) {
                   row.columns.remove(col_index - 1);
                 }
+                if col_index == self.col {
+                  self.cursor_move(0, -1);
+                }
               } else {
                 // if there is no whitespace before closing vertical line then add one,
                 // it looks like holding the vertical line before the '╥' character
@@ -411,17 +414,17 @@ impl Plane {
         }
       }
       // extend joining line after the right side of the decision table body
-      if row_index + 1 < self.rows.len() {
-        let i = self.rows[0].columns.len();
-        let j = self.rows[row_index + 1].columns.len();
-        if i > j {
-          self.rows[row_index].columns[j - 1] = '┬';
-          for _ in j + 1..i {
-            self.rows[row_index].columns.push('─');
-          }
-          self.rows[row_index].columns.push('┘');
-        }
-      }
+      // if row_index + 1 < self.rows.len() {
+      //   let i = self.rows[0].columns.len();
+      //   let j = self.rows[row_index + 1].columns.len();
+      //   if i > j {
+      //     self.rows[row_index + 1].columns[j - 1] = '┬';
+      //     for _ in j + 1..i {
+      //       self.rows[row_index].columns.push('─');
+      //     }
+      //     self.rows[row_index].columns.push('┘');
+      //   }
+      // }
     }
   }
 
