@@ -348,7 +348,7 @@ impl Plane {
 
   /// Updated join character between information item name cell and the body of the decision table.
   fn update_join_character(&mut self, from_left: bool) {
-    if self.iih > 0 {
+    if self.iih > 0 && self.iih + 1 < self.rows.len() {
       let row_index = self.iih;
       // replace all joining characters between the information item name and body to `un-joined` equivalent
       for ch in &mut self.rows[row_index].columns {
@@ -359,6 +359,16 @@ impl Plane {
           _ => {}
         }
       }
+      // if the joining row is longer then the decision table body (information item name is longer),
+      // then delete all characters that extend the next row and...
+      while self.rows[row_index].columns.len() > self.rows[row_index + 1].columns.len() {
+        self.rows[row_index].columns.pop();
+      }
+      // ...replace the last character with '┐'
+      if let Some(ch) = self.rows[row_index].columns.last_mut() {
+        *ch = '┐';
+      }
+      // update joins
       let col_index = self.rows[0].columns.len() - 1;
       if col_index < self.rows[row_index].columns.len() {
         match self.rows[row_index].columns[col_index] {
@@ -398,6 +408,18 @@ impl Plane {
             }
           }
           _ => {}
+        }
+      }
+      // extend joining line after the right side of the decision table body
+      if row_index + 1 < self.rows.len() {
+        let i = self.rows[0].columns.len();
+        let j = self.rows[row_index + 1].columns.len();
+        if i > j {
+          self.rows[row_index].columns[j - 1] = '┬';
+          for _ in j + 1..i {
+            self.rows[row_index].columns.push('─');
+          }
+          self.rows[row_index].columns.push('┘');
         }
       }
     }
