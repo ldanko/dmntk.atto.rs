@@ -78,7 +78,7 @@ impl Editor {
   }
   /// Updates cursor position.
   fn update_cursor(&self) {
-    mv(self.plane.cursor_row(), self.plane.cursor_col());
+    mv(self.plane.cursor_row() as i32, self.plane.cursor_col() as i32);
   }
   /// Updates cursor coordinates in status bar.
   fn update_cursor_coordinates(&self) {

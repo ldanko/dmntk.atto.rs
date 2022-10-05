@@ -148,14 +148,14 @@ impl Plane {
     &self.rows
   }
 
-  /// Returns the vertical position of the cursor in screen coordinates.
-  pub fn cursor_row(&self) -> i32 {
-    self.row as i32
+  /// Returns the vertical position of the cursor in plane coordinates.
+  pub fn cursor_row(&self) -> usize {
+    self.row
   }
 
-  /// Returns the horizontal position of the cursor in screen coordinates.
-  pub fn cursor_col(&self) -> i32 {
-    self.col as i32
+  /// Returns the horizontal position of the cursor in plane coordinates.
+  pub fn cursor_col(&self) -> usize {
+    self.col
   }
 
   /// Returns `true` if the current cursor position is valid.
