@@ -298,9 +298,8 @@ impl Plane {
       if count > 0 {
         columns.remove(self.col + offset + 1);
       } else {
-        self.a();
         self.insert_column_before_vert_line_crossing();
-        self.b(self.row < self.iih);
+        self.update_join_character(self.row < self.iih);
       }
       self.cursor_move(0, 1);
     }
@@ -313,9 +312,8 @@ impl Plane {
       self.cursor_move(0, -1);
       let pos = self.last_position_before_vert_line();
       if self.whitespaces_before_vert_line(pos) {
-        self.a();
         self.delete_character_before_vert_line(pos);
-        self.b(self.row > self.iih);
+        self.update_join_character(self.row > self.iih);
       } else {
         self.insert_whitespace_before_vert_line();
       }
@@ -326,9 +324,8 @@ impl Plane {
   pub fn delete_char(&mut self) {
     let pos = self.last_position_before_vert_line();
     if self.whitespaces_before_vert_line(pos) {
-      self.a();
       self.delete_character_before_vert_line(pos);
-      self.b(self.row > self.iih);
+      self.update_join_character(self.row > self.iih);
     } else {
       self.insert_whitespace_before_vert_line();
     }
@@ -349,46 +346,55 @@ impl Plane {
     }
   }
 
-  /// Update connection with information item name cell.
-  fn a(&mut self) {
-    let i = self.iih;
-    if i > 0 {
-      let pos = self.rows[0].columns.len() - 1;
-      if pos < self.rows[i].columns.len() {
-        match self.rows[i].columns[pos] {
-          '┴' => self.rows[i].columns[pos] = '─',
-          '┼' => self.rows[i].columns[pos] = '┬',
-          '┤' => self.rows[i].columns[pos] = '┐',
+  /// Updated join character between information item name cell and the body of the decision table.
+  fn update_join_character(&mut self, from_left: bool) {
+    if self.iih > 0 {
+      let row_index = self.iih;
+      // replace all joining characters between the information item name and body to `un-joined` equivalent
+      for ch in &mut self.rows[row_index].columns {
+        match ch {
+          '┴' => *ch = '─',
+          '┼' => *ch = '┬',
+          '┤' => *ch = '┐',
           _ => {}
         }
       }
-    }
-  }
-
-  /// Update connection with information item name cell.
-  fn b(&mut self, from_left: bool) {
-    let i = self.iih;
-    if i > 0 {
-      let pos = self.rows[0].columns.len() - 1;
-      if pos < self.rows[i].columns.len() {
-        match self.rows[i].columns[pos] {
-          '─' => self.rows[i].columns[pos] = '┴',
-          '┬' => self.rows[i].columns[pos] = '┼',
-          '┐' => self.rows[i].columns[pos] = '┤',
+      let col_index = self.rows[0].columns.len() - 1;
+      if col_index < self.rows[row_index].columns.len() {
+        match self.rows[row_index].columns[col_index] {
+          '─' => self.rows[row_index].columns[col_index] = '┴',
+          '┬' => self.rows[row_index].columns[col_index] = '┼',
+          '┐' => self.rows[row_index].columns[col_index] = '┤',
           '╥' => {
             if from_left {
-              self.rows[i].columns[pos + 1] = '┴';
-              self.rows[0].columns.insert(pos, '─');
-              for row in self.rows.iter_mut().skip(1).take(i - 1) {
-                row.columns.insert(pos, CH_WS);
+              // approaching '╥' from left
+              // insert additional space before vertical line,
+              // it looks like jumping over the '╥' character from left to right
+              self.rows[row_index].columns[col_index + 1] = '┴';
+              self.rows[0].columns.insert(col_index, '─');
+              for row in self.rows.iter_mut().skip(1).take(row_index - 1) {
+                row.columns.insert(col_index, CH_WS);
               }
             } else {
-              self.rows[i].columns[pos - 1] = '┴';
-              self.rows[0].columns.remove(pos - 1);
-              for row in self.rows.iter_mut().skip(1).take(i - 1) {
-                row.columns.remove(pos - 1);
+              // approaching '╥' from right
+              // check if there is a whitespace before closing vertical line in each row
+              if self.rows.iter().skip(1).take(row_index - 1).all(|row| row.columns[col_index - 1] == CH_WS) {
+                // if there is a whitespace before closing vertical line then delete it,
+                // it looks like jumping over the '╥' character from right to left
+                self.rows[row_index].columns[col_index - 1] = '┴';
+                self.rows[0].columns.remove(col_index - 1);
+                for row in self.rows.iter_mut().skip(1).take(row_index - 1) {
+                  row.columns.remove(col_index - 1);
+                }
+              } else {
+                // if there is no whitespace before closing vertical line then add one,
+                // it looks like holding the vertical line before the '╥' character
+                self.rows[row_index].columns[col_index + 1] = '┴';
+                self.rows[0].columns.insert(col_index, '─');
+                for row in self.rows.iter_mut().skip(1).take(row_index - 1) {
+                  row.columns.insert(col_index, CH_WS);
+                }
               }
-              self.cursor_move(0, -1);
             }
           }
           _ => {}
