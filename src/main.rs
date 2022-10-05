@@ -38,7 +38,6 @@ mod errors;
 mod keys;
 mod plane;
 #[cfg(test)]
-#[macro_use]
 mod tests;
 
 use errors::*;
@@ -47,7 +46,7 @@ use ncurses::*;
 use plane::*;
 use std::{env, fs};
 
-///
+/// Editor action.
 enum Action {
   CursorMoveCellStart,
   CursorMoveCellEnd,
