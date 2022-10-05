@@ -37,3 +37,11 @@
 - Add command-line arguments handling using **clap**.
 - Add initializer screen with selecting options for new decision tables.
 - Hide cursor when repainting.
+- Undo/Redo.
+- Mouse.
+- Enter (wrapping rows).
+- Delete multirow.
+- Replace mode.
+- Insert after mode.
+- Jump to row above/below when moving horizontally.
+- Consider using: https://github.com/gyscos/cursive
