@@ -31,8 +31,8 @@ fn eq(plane: &Plane, decision_table: &str) {
 
 /// Utility function for comparing screen cursor position.
 fn eq_cursor(row: i32, col: i32, plane: &Plane) {
-  assert_eq!(row, plane.cursor_row());
-  assert_eq!(col, plane.cursor_col());
+  assert_eq!(row, plane.cursor_row() as i32);
+  assert_eq!(col, plane.cursor_col() as i32);
 }
 
 /// Utility function for repeating operations.
