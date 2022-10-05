@@ -296,7 +296,7 @@ impl Plane {
       let columns = &mut self.rows[self.row].columns;
       columns.insert(self.col, ch);
       if count > 0 {
-        columns.remove(self.col + offset);
+        columns.remove(self.col + offset + 1);
       } else {
         self.a();
         self.insert_column_before_vert_line_crossing();

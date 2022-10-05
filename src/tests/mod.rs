@@ -9,7 +9,7 @@ use difference::Changeset;
 
 macro_rules! repeat {
   ($c:expr, $p:expr, $f:tt) => {{
-    rep_op($c, || {
+    rep($c, || {
       $p.$f();
     });
   }};
@@ -36,7 +36,7 @@ fn eq_cursor(row: i32, col: i32, plane: &Plane) {
 }
 
 /// Utility function for repeating operations.
-fn rep_op<F>(n: usize, mut f: F)
+fn rep<F>(n: usize, mut f: F)
 where
   F: FnMut(),
 {
