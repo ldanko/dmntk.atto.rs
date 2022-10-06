@@ -39,13 +39,6 @@ pub type Result<T, E = AttoError> = std::result::Result<T, E>;
 #[derive(Debug)]
 pub struct AttoError(String);
 
-impl std::fmt::Display for AttoError {
-  /// Implementation of [Display](std::fmt::Display) trait for [AttoError].
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.0)
-  }
-}
-
 /// Creates and error indicating invalid command line arguments passed to application.
 pub fn err_invalid_arguments() -> AttoError {
   AttoError("invalid command line arguments".to_string())

@@ -16,6 +16,9 @@ cargo build
 # run all tests
 cargo test
 
+# run manual tests
+./manual_tests.sh
+
 # prepare output directories for coverage results
 mkdir ./target/lcov
 mkdir ./target/coverage
