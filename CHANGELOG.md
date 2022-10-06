@@ -1,5 +1,5 @@
 # Changelog
-All notable changes to **Atto** editor will be documented in this file.
+All notable changes to decision table editor will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -42,7 +42,7 @@ For small tables, 500 columns x 300 rows = 150000 DIVs. Rendering took so much t
 
 I needed something really simple and fast for editing decision tables. And then came the old friend to the rescue...
 
-**TERMINAL**
+**THE TERMINAL**
 
 This decision table editor is written in Rust and works simply in Linux terminal.
     
