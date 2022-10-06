@@ -32,8 +32,10 @@
 
 //! Implementation of a minimalistic decision table editor.
 
+extern crate clap;
 extern crate ncurses;
 
+mod actions;
 mod editor;
 mod errors;
 mod keys;
@@ -42,28 +44,21 @@ mod plane;
 mod tests;
 mod utils;
 
+use crate::actions::do_action;
 use editor::Editor;
-use errors::*;
-use ncurses::*;
+use errors::Result;
 use std::env;
 
-/// Prints usage message.
-fn usage() {
-  println!("usage")
-}
+/// Name of this editor.
+const ATTO_NAME: &str = "atto";
+
+/// Current editor version.
+const ATTO_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// Short description.
+const ATTO_DESCRIPTION: &str = "Decision table editor";
 
 /// Main entrypoint.
 fn main() -> Result<()> {
-  let args: Vec<String> = env::args().collect();
-  if args.len() != 2 {
-    usage();
-    return Err(err_invalid_arguments());
-  }
-  let mut editor = Editor::new(&args[1])?;
-  editor.repaint_plane();
-  editor.update_cursor();
-  editor.update_cursor_coordinates();
-  refresh();
-  editor.process_keystrokes();
-  editor.finalize()
+  do_action()
 }

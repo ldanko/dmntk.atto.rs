@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Command-line arguments handling using **clap**.
+
+## [0.0.5] - ???
+### Added
+- Handling command-line arguments. Type `atto --help` for details.
 
 ## [0.0.4] - 2022-10-06
 ### Added

@@ -13,6 +13,7 @@ name = "atto"
 path = "src/main.rs"
 
 [dependencies]
+clap = "4.0.10"
 ncurses = { version = "5.101.0", features = ["wide", "extended_colors"] }
 
 [dev-dependencies]
