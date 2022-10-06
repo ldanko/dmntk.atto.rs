@@ -19,9 +19,9 @@
 - Scroll view when the content is larger than width/height of the terminal.
 - Disable editing rule numbers - adjust rule numbers automatically.
 - Disable free editing of the hit policy - accept only allowed characters.
-- Insert rule.
-- Delete rule.
-- Reposition rule (up<->down, left<->right).
+- Insert decision rule.
+- Delete decision rule.
+- Reposition decision rule (up<->down (horizontal), left<->right (vertical)).
 - Add input clause.
 - Delete input clause.
 - Reposition input clause.
@@ -38,10 +38,11 @@
 - Add initializer screen with selecting options for new decision tables.
 - Hide cursor when repainting.
 - Undo/Redo.
-- Mouse.
 - Enter (wrapping rows).
 - Delete multirow.
 - Replace mode.
 - Insert after mode.
 - Jump to row above/below when moving horizontally.
 - Consider using: https://github.com/gyscos/cursive
+- Add option to save example decision tables.
+- Interactive decision table initializer.

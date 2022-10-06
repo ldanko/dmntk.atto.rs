@@ -34,6 +34,7 @@
 
 extern crate ncurses;
 
+mod dev_utils;
 mod errors;
 mod keys;
 mod plane;
@@ -283,20 +284,6 @@ impl Editor {
 /// Prints usage message.
 fn usage() {
   println!("usage")
-}
-
-/// Temporary debug function.
-//TODO remove
-pub fn debug(msg: &str) {
-  let mut x = 0;
-  let mut y = 0;
-  let mut mx = 0;
-  let mut my = 0;
-  getyx(stdscr(), &mut y, &mut x);
-  getmaxyx(stdscr(), &mut my, &mut mx);
-  mvaddstr(my - 1, 1, msg);
-  mv(y, x);
-  refresh();
 }
 
 /// Main entrypoint.
