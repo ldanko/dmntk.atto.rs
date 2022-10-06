@@ -23,8 +23,12 @@ tmux send-keys -t Atto C-q
 
 tmux new-session -d -s AttoNoArgs './target/debug/atto'
 
+sleep 0.2
+
 # =================================================================================================
 # start editor with non-existing file
 # =================================================================================================
 
 tmux new-session -d -s AttoNonExistingFile './target/debug/atto ./examples/nop.dtb'
+
+sleep 0.2

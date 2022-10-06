@@ -35,7 +35,6 @@
 - Split cells.
 - When information item name present - edit separately from the table.
 - Add command-line arguments handling using **clap**.
-- Add initializer screen with selecting options for new decision tables.
 - Hide cursor when repainting.
 - Undo/Redo.
 - Enter (wrapping rows).
@@ -45,4 +44,8 @@
 - Jump to row above/below when moving horizontally.
 - Consider using: https://github.com/gyscos/cursive
 - Add option to save example decision tables.
+- Add initializer screen with selecting options for new decision tables.
 - Interactive decision table initializer.
+- Recognize decision table on input.
+- Parse and compile decision table.
+- Evaluate decision table with test data.
