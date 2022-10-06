@@ -33,6 +33,7 @@
 use crate::errors::*;
 use crate::keys::*;
 use crate::plane::*;
+use crate::utils::debug;
 use ncurses::*;
 use std::fs;
 
@@ -225,15 +226,7 @@ impl Editor {
           }
         }
         EditorAction::DebugKeystroke(key, key_name) => {
-          let mut x = 0;
-          let mut y = 0;
-          let mut mx = 0;
-          let mut my = 0;
-          getyx(self.window, &mut y, &mut x);
-          getmaxyx(self.window, &mut my, &mut mx);
-          mvaddstr(my - 1, 30, &format!("{} | {:40}", key, key_name));
-          mv(y, x);
-          refresh();
+          debug(&format!("KEY: {} | {}", key, key_name));
         }
         EditorAction::DeleteChar => {
           self.plane.delete_char();

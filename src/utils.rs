@@ -35,8 +35,6 @@
 use ncurses::*;
 
 /// Displays a message in the left-bottom corner of the terminal.
-/// Preserves current cursor position.
-#[allow(dead_code)]
 pub fn debug(msg: &str) {
   let mut x = 0;
   let mut y = 0;
@@ -44,7 +42,7 @@ pub fn debug(msg: &str) {
   let mut my = 0;
   getyx(stdscr(), &mut y, &mut x);
   getmaxyx(stdscr(), &mut my, &mut mx);
-  mvaddstr(my - 1, 0, &format!("DEBUG: {:40}", msg));
+  mvaddstr(my - 1, 1, &format!("{:40}", msg));
   mv(y, x);
   refresh();
 }

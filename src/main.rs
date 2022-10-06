@@ -34,13 +34,13 @@
 
 extern crate ncurses;
 
-mod dev_utils;
 mod editor;
 mod errors;
 mod keys;
 mod plane;
 #[cfg(test)]
 mod tests;
+mod utils;
 
 use editor::Editor;
 use errors::*;
