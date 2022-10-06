@@ -36,8 +36,8 @@ use crate::plane::*;
 use ncurses::*;
 use std::fs;
 
-/// Editor action.
-enum Action {
+/// Editor actions.
+enum EditorAction {
   CursorMoveCellStart,
   CursorMoveCellEnd,
   CursorMoveCellLeft,
@@ -51,8 +51,8 @@ enum Action {
   DebugKeystroke(i32, String),
   DeleteChar,
   DeleteCharBefore,
-  DoNothing,
   InsertChar(char),
+  Nop,
   ResizeWindow,
   Quit,
 }
@@ -122,31 +122,31 @@ impl Editor {
   }
 
   /// Maps a key-stroke to editor action.
-  fn map_key_to_action(&self, key: i32) -> Action {
+  fn map_key_to_action(&self, key: i32) -> EditorAction {
     if let Some(key_name) = keyname(key) {
       match key_name.as_str() {
-        KN_CTRL_Q => Action::Quit,
-        KN_UP => Action::CursorMoveUp,
-        KN_DOWN => Action::CursorMoveDown,
-        KN_LEFT => Action::CursorMoveLeft,
-        KN_RIGHT => Action::CursorMoveRight,
-        KN_BACKSPACE => Action::DeleteCharBefore,
-        KN_DELETE => Action::DeleteChar,
-        KN_HOME => Action::CursorMoveCellStart,
-        KN_END => Action::CursorMoveCellEnd,
-        KN_SHIFT_HOME => Action::CursorMoveTableStart,
-        KN_SHIFT_END => Action::CursorMoveTableEnd,
-        KN_TAB => Action::CursorMoveCellRight,
-        KN_SHIFT_TAB => Action::CursorMoveCellLeft,
-        KN_RESIZE => Action::ResizeWindow,
+        KN_CTRL_Q => EditorAction::Quit,
+        KN_UP => EditorAction::CursorMoveUp,
+        KN_DOWN => EditorAction::CursorMoveDown,
+        KN_LEFT => EditorAction::CursorMoveLeft,
+        KN_RIGHT => EditorAction::CursorMoveRight,
+        KN_BACKSPACE => EditorAction::DeleteCharBefore,
+        KN_DELETE => EditorAction::DeleteChar,
+        KN_HOME => EditorAction::CursorMoveCellStart,
+        KN_END => EditorAction::CursorMoveCellEnd,
+        KN_SHIFT_HOME => EditorAction::CursorMoveTableStart,
+        KN_SHIFT_END => EditorAction::CursorMoveTableEnd,
+        KN_TAB => EditorAction::CursorMoveCellRight,
+        KN_SHIFT_TAB => EditorAction::CursorMoveCellLeft,
+        KN_RESIZE => EditorAction::ResizeWindow,
         _ => match key {
-          32..=126 => Action::InsertChar(char::from_u32(key as u32).unwrap()),
-          127 => Action::DeleteChar,
-          _ => Action::DebugKeystroke(key, key_name),
+          32..=126 => EditorAction::InsertChar(char::from_u32(key as u32).unwrap()),
+          127 => EditorAction::DeleteChar,
+          _ => EditorAction::DebugKeystroke(key, key_name),
         },
       }
     } else {
-      Action::DoNothing
+      EditorAction::Nop
     }
   }
 
@@ -154,77 +154,77 @@ impl Editor {
   pub fn process_keystrokes(&mut self) {
     loop {
       match self.map_key_to_action(getch()) {
-        Action::CursorMoveCellStart => {
+        EditorAction::CursorMoveCellStart => {
           if self.plane.cursor_move_cell_start() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        Action::CursorMoveCellEnd => {
+        EditorAction::CursorMoveCellEnd => {
           if self.plane.cursor_move_cell_end() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        Action::CursorMoveCellLeft => {
+        EditorAction::CursorMoveCellLeft => {
           if self.plane.cursor_move_cell_left() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        Action::CursorMoveCellRight => {
+        EditorAction::CursorMoveCellRight => {
           if self.plane.cursor_move_cell_right() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        Action::CursorMoveDown => {
+        EditorAction::CursorMoveDown => {
           if self.plane.cursor_move_down() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        Action::CursorMoveLeft => {
+        EditorAction::CursorMoveLeft => {
           if self.plane.cursor_move_left() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        Action::CursorMoveRight => {
+        EditorAction::CursorMoveRight => {
           if self.plane.cursor_move_right() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        Action::CursorMoveTableStart => {
+        EditorAction::CursorMoveTableStart => {
           if self.plane.cursor_move_table_start() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        Action::CursorMoveTableEnd => {
+        EditorAction::CursorMoveTableEnd => {
           if self.plane.cursor_move_table_end() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        Action::CursorMoveUp => {
+        EditorAction::CursorMoveUp => {
           if self.plane.cursor_move_up() {
             self.update_cursor();
             self.update_cursor_coordinates();
             refresh();
           }
         }
-        Action::DebugKeystroke(key, key_name) => {
+        EditorAction::DebugKeystroke(key, key_name) => {
           let mut x = 0;
           let mut y = 0;
           let mut mx = 0;
@@ -235,28 +235,28 @@ impl Editor {
           mv(y, x);
           refresh();
         }
-        Action::DeleteChar => {
+        EditorAction::DeleteChar => {
           self.plane.delete_char();
           self.repaint_plane();
           self.update_cursor();
           self.update_cursor_coordinates();
         }
-        Action::DeleteCharBefore => {
+        EditorAction::DeleteCharBefore => {
           self.plane.delete_char_before();
           self.repaint_plane();
           self.update_cursor();
           self.update_cursor_coordinates();
           refresh();
         }
-        Action::DoNothing => {}
-        Action::InsertChar(ch) => {
+        EditorAction::Nop => {}
+        EditorAction::InsertChar(ch) => {
           self.plane.insert_char(ch);
           self.repaint_plane();
           self.update_cursor();
           self.update_cursor_coordinates();
           refresh();
         }
-        Action::ResizeWindow => {
+        EditorAction::ResizeWindow => {
           // getmaxyx(self.window, &mut max_y, &mut max_x);
           // getyx(window, &mut cur_y, &mut cur_x);
           // attron(A_REVERSE());
@@ -265,7 +265,7 @@ impl Editor {
           // mv(cur_y, cur_x);
           // refresh();
         }
-        Action::Quit => break,
+        EditorAction::Quit => break,
       }
     }
   }
