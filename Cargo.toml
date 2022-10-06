@@ -1,6 +1,6 @@
 [package]
 name = "dmntk-atto"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["Dariusz Depta <dariusz.depta@dmntk.io>"]
 description = "DMNTK | Decision table editor"
 documentation = "https://docs.rs/dmntk-atto"
