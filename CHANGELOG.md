@@ -32,20 +32,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Opening and displaying a decision table.
 
 ## [0.0.0] - 2020-04-10
-### The birthday of the father project of this editor
+### Birthday of this editor's father
+
 It was a Friday evening, when I started the development of the decision table editor in TypeScript for browsers.
-After a few sleepless weekends I suspended the project, because of really pure performance, even for not so large
-decision tables.
+After a few sleepless nights I suspended the project, because of really pure performance, even for small decision tables.
 
-The idea was to open a text file in browser, edit it, and save. Sounds quite easy.
-Browser do such things since the beginning of the Internet... 
+The idea was to open a text file in browser, edit it, and save. Sounds easy. Browser do such things since the beginning of the Internet... 
 
-The trick was, that each simple character in the decision table (lines also) was represented by single DIV.
-For small tables, 500 columns x 300 rows = 150000 DIVs. Rendering took so much time, that there was only flickering...
+But the trick was, that each single character in the decision table (lines also) was represented by DIV in HTML.
+For small tables (like 500 columns x 300 rows) there were 150,000 DIVs. Rendering those DIVs took so much time,
+that the user has seen only flickering...
 
-I needed something really simple and fast for editing decision tables. And then came the old friend to the rescue...
+I needed something simple and really fast for editing decision tables saved as text. And then came the old friend to the rescue...
 
 **THE TERMINAL**
 
-This decision table editor is written in Rust and works simply in Linux terminal.
+This decision table editor is written in Rust and works in Linux terminal.
     
