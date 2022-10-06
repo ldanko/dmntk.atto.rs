@@ -34,7 +34,7 @@
 - Join cells.
 - Split cells.
 - When information item name present - edit separately from the table.
-- Add command-line arguments handling using **clap**.
+- |> Add command-line arguments handling using **clap**.
 - Hide cursor when repainting.
 - Undo/Redo.
 - Enter (wrapping rows).
