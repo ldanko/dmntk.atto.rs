@@ -116,9 +116,9 @@ impl Editor {
 
   /// Repaints the content of a plane.
   pub fn repaint_plane(&self) {
-    for (r, row) in self.plane.rows().iter().enumerate() {
+    for (r, row) in self.plane.chars.iter().enumerate() {
       mv(r as i32, 0);
-      addstr(&row.to_string());
+      addstr(&row.iter().collect::<String>());
       addstr("  ");
     }
   }
