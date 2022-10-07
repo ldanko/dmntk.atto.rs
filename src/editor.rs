@@ -55,6 +55,7 @@ enum EditorAction {
   InsertChar(char),
   Nop,
   ResizeWindow,
+  SplitLine,
   Quit,
 }
 
@@ -141,6 +142,7 @@ impl Editor {
         KN_SHIFT_TAB => EditorAction::CursorMoveCellLeft,
         KN_RESIZE => EditorAction::ResizeWindow,
         _ => match key {
+          10 => EditorAction::SplitLine,
           32..=126 => EditorAction::InsertChar(char::from_u32(key as u32).unwrap()),
           127 => EditorAction::DeleteChar,
           _ => EditorAction::DebugKeystroke(key, key_name),
@@ -257,6 +259,13 @@ impl Editor {
           // attroff(A_REVERSE());
           // mv(cur_y, cur_x);
           // refresh();
+        }
+        EditorAction::SplitLine => {
+          self.plane.split_line();
+          self.repaint_plane();
+          self.update_cursor();
+          self.update_cursor_coordinates();
+          refresh();
         }
         EditorAction::Quit => break,
       }
