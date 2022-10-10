@@ -87,15 +87,15 @@ macro_rules! is_horz_line_top {
   };
 }
 
-/// Checks if the specified character is a crossing with horizontal line.
-macro_rules! is_horz_line_crossing {
-  ($ch:expr) => {
-    match $ch {
-      '─' | '┼' | '┬' | '┴' | '╪' | '┐' | '┘' | '├' | '═' | '╟' | '╬' | '╥' | '╨' | '╫' | '╢' | '┤' | '╡' => true,
-      _ => false,
-    }
-  };
-}
+// /// Checks if the specified character is a crossing with horizontal line.
+// macro_rules! is_horz_line_crossing {
+//   ($ch:expr) => {
+//     match $ch {
+//       '─' | '┼' | '┬' | '┴' | '╪' | '┐' | '┘' | '├' | '═' | '╟' | '╬' | '╥' | '╨' | '╫' | '╢' | '┤' | '╡' => true,
+//       _ => false,
+//     }
+//   };
+// }
 
 enum Op {
   Insert,
@@ -433,10 +433,8 @@ impl Plane {
   /// below the character pointed by current cursor position.
   fn last_row_before_horz_line_below(&self) -> usize {
     for (row_index, row) in self.chars.iter().enumerate().skip(self.row) {
-      if (1..row.len() - 1).contains(&self.col) {
-        if is_horz_line_top!(row[self.col]) {
-          return row_index - 1;
-        }
+      if (1..row.len() - 1).contains(&self.col) && is_horz_line_top!(row[self.col]) {
+        return row_index - 1;
       }
     }
     self.row

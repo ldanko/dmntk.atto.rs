@@ -105,6 +105,7 @@ const TEST_INPUT_001: &str = r#"
 const TEST_INPUT_X: &str = r#"
 ┌─────────────────────────────────────┐
 │abcdef_hijklmnopqrstuvwxyzABCDEFGHIJK│
+│                                     │
 ├───┬───────────┬───────╥─────────────┴───────╥─────────────┬───────────┐
 │ U │           │       ║    Order options    ║             │           │
 │   │ Customer  │ Order ╟──────────┬──────────╢ Description │ Reference │
