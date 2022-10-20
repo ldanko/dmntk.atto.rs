@@ -36,6 +36,7 @@ use crate::plane::*;
 use crate::utils::debug;
 use ncurses::*;
 use std::fs;
+use std::time::Instant;
 
 /// Editor actions.
 enum EditorAction {
@@ -245,7 +246,10 @@ impl Editor {
         }
         EditorAction::Nop => {}
         EditorAction::InsertChar(ch) => {
+          let now = Instant::now();
           self.plane.insert_char(ch);
+          let elapsed = now.elapsed();
+          debug(&format!("{:.2?}", elapsed));
           self.repaint_plane();
           self.update_cursor();
           self.update_cursor_coordinates();
