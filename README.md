@@ -4,7 +4,7 @@
 
 ## Overview
 
-Terminal based editor for decision tables.
+Terminal based editor for decision tables written in **Rust**.
 
 **WORK IN PROGRESS**
 
